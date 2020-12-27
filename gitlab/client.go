@@ -6,13 +6,21 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-type GroupContentFetcher interface {
-	FetchGroupContent(path string) (GroupContent, error)
+type GroupFetcher interface {
+	FetchGroup(gid int) (*Group, error)
+	FetchGroupContent(group *Group) (*GroupContent, error)
 }
 
 type GroupContent struct {
-	Repositories []Repository
-	Groups       []Group
+	Groups       map[string]*Group
+	Repositories map[string]*Repository
+}
+
+type Group struct {
+	ID      int
+	Name    string
+	Path    string
+	Content *GroupContent
 }
 
 type Repository struct {
@@ -20,12 +28,6 @@ type Repository struct {
 	Name     string
 	Path     string
 	CloneURL string
-}
-
-type Group struct {
-	ID   int
-	Name string
-	Path string
 }
 
 type GitlabClient struct {
@@ -47,7 +49,7 @@ func NewClient(gitlabUrl string, gitlabToken string) (*GitlabClient, error) {
 	return gitlabClient, nil
 }
 
-func NewRepositryFromGitlabProject(project *gitlab.Project) Repository {
+func NewRepositoryFromGitlabProject(project *gitlab.Project) Repository {
 	// https://godoc.org/github.com/xanzy/go-gitlab#Project
 	return Repository{
 		ID:       project.ID,
@@ -67,27 +69,23 @@ func NewGroupFromGitlabGroup(group *gitlab.Group) Group {
 	}
 }
 
-func (g GitlabClient) FetchGroupContent(group *Group) (*GroupContent, error) {
-	content := &GroupContent{}
+func (c GitlabClient) FetchGroup(gid int) (*Group, error) {
+	gitlabGroup, _, err := c.Client.Groups.GetGroup(gid)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch root group with id %v: %w\n", gid, err)
+	}
+	group := NewGroupFromGitlabGroup(gitlabGroup)
+	return &group, nil
+}
 
-	// List repositories in path
-	listProjectOpt := &gitlab.ListGroupProjectsOptions{
-		ListOptions: gitlab.ListOptions{
-			Page: 1,
-		}}
-	for {
-		projects, response, err := g.Client.Groups.ListGroupProjects(group.ID, listProjectOpt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch projects in gitlab: %w", err)
-		}
-		for _, project := range projects {
-			content.Repositories = append(content.Repositories, NewRepositryFromGitlabProject(project))
-		}
-		if response.CurrentPage >= response.TotalPages {
-			break
-		}
-		// Get the next page
-		listProjectOpt.Page = response.NextPage
+func (c GitlabClient) FetchGroupContent(group *Group) (*GroupContent, error) {
+	if group.Content != nil {
+		return group.Content, nil
+	}
+
+	content := &GroupContent{
+		Groups:       map[string]*Group{},
+		Repositories: map[string]*Repository{},
 	}
 
 	// List subgroups in path
@@ -96,12 +94,13 @@ func (g GitlabClient) FetchGroupContent(group *Group) (*GroupContent, error) {
 			Page: 1,
 		}}
 	for {
-		groups, response, err := g.Client.Groups.ListSubgroups(group.ID, ListGroupsOpt)
+		gitlabGroups, response, err := c.Client.Groups.ListSubgroups(group.ID, ListGroupsOpt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch groups in gitlab: %w", err)
 		}
-		for _, group := range groups {
-			content.Groups = append(content.Groups, NewGroupFromGitlabGroup(group))
+		for _, gitlabGroup := range gitlabGroups {
+			group := NewGroupFromGitlabGroup(gitlabGroup)
+			content.Groups[group.Path] = &group
 		}
 		if response.CurrentPage >= response.TotalPages {
 			break
@@ -110,5 +109,27 @@ func (g GitlabClient) FetchGroupContent(group *Group) (*GroupContent, error) {
 		ListGroupsOpt.Page = response.NextPage
 	}
 
+	// List repositories in path
+	listProjectOpt := &gitlab.ListGroupProjectsOptions{
+		ListOptions: gitlab.ListOptions{
+			Page: 1,
+		}}
+	for {
+		gitlabProjects, response, err := c.Client.Groups.ListGroupProjects(group.ID, listProjectOpt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch projects in gitlab: %w", err)
+		}
+		for _, gitlabProject := range gitlabProjects {
+			repository := NewRepositoryFromGitlabProject(gitlabProject)
+			content.Repositories[repository.Path] = &repository
+		}
+		if response.CurrentPage >= response.TotalPages {
+			break
+		}
+		// Get the next page
+		listProjectOpt.Page = response.NextPage
+	}
+
+	group.Content = content
 	return content, nil
 }
