@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/badjware/gitlabfs/fs"
+	"github.com/badjware/gitlabfs/git"
 	"github.com/badjware/gitlabfs/gitlab"
 )
 
@@ -20,22 +22,28 @@ func main() {
 		os.Exit(2)
 	}
 	mountpoint := flag.Arg(0)
+	parsedGitlabURL, err := url.Parse(*gitlabURL)
+	if err != nil {
+		fmt.Printf("%v is not a valid url: %v\n", *gitlabURL, err)
+		os.Exit(1)
+	}
 
-	gitlabClient, _ := gitlab.NewClient(*gitlabURL, *gitlabToken)
+	// Create the gitlab client
+	gitlabClientParam := gitlab.GitlabClientParam{}
+	gitlabClient, _ := gitlab.NewClient(*gitlabURL, *gitlabToken, gitlabClientParam)
 
-	fs.Start(gitlabClient, mountpoint, *gitlabRootGroupID)
+	// Create the git client
+	gitClientParam := git.GitClientParam{
+		RemoteURL:    parsedGitlabURL,
+		AutoClone:    true,
+		AutoPull:     false,
+		Fetch:        false,
+		Checkout:     false,
+		SingleBranch: true,
+		PullDepth:    0,
+	}
+	gitClient, _ := git.NewClient(gitClientParam)
 
-	// content, err := gitlabClient.FetchGroupContent(&rootGroup)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-
-	// fmt.Println("Projects")
-	// for _, r := range content.Repositories {
-	// 	fmt.Println(r.Name, r.Path, r.CloneURL)
-	// }
-	// fmt.Println("Groups")
-	// for _, g := range content.Groups {
-	// 	fmt.Println(g.Name, g.Path)
-	// }
+	// Start the filesystem
+	fs.Start(gitlabClient, gitClient, mountpoint, *gitlabRootGroupID)
 }

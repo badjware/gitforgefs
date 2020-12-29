@@ -4,6 +4,8 @@ import (
 	"context"
 	"syscall"
 
+	"github.com/badjware/gitlabfs/git"
+
 	"github.com/badjware/gitlabfs/gitlab"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
@@ -13,6 +15,7 @@ type groupNode struct {
 	fs.Inode
 	group *gitlab.Group
 	gf    gitlab.GroupFetcher
+	gcp   git.GitClonerPuller
 }
 
 // Ensure we are implementing the NodeReaddirer interface
@@ -21,7 +24,7 @@ var _ = (fs.NodeReaddirer)((*groupNode)(nil))
 // Ensure we are implementing the NodeLookuper interface
 var _ = (fs.NodeLookuper)((*groupNode)(nil))
 
-func newRootGroupNode(gf gitlab.GroupFetcher, gid int) (*groupNode, error) {
+func newRootGroupNode(gf gitlab.GroupFetcher, gcp git.GitClonerPuller, gid int) (*groupNode, error) {
 	group, err := gf.FetchGroup(gid)
 	if err != nil {
 		return nil, err
@@ -29,14 +32,16 @@ func newRootGroupNode(gf gitlab.GroupFetcher, gid int) (*groupNode, error) {
 	node := &groupNode{
 		group: group,
 		gf:    gf,
+		gcp:   gcp,
 	}
 	return node, nil
 }
 
-func newGroupNode(gf gitlab.GroupFetcher, group *gitlab.Group) (*groupNode, error) {
+func newGroupNode(gf gitlab.GroupFetcher, gcp git.GitClonerPuller, group *gitlab.Group) (*groupNode, error) {
 	node := &groupNode{
 		group: group,
 		gf:    gf,
+		gcp:   gcp,
 	}
 	return node, nil
 }
@@ -71,7 +76,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 			Ino:  uint64(group.ID),
 			Mode: fuse.S_IFDIR,
 		}
-		groupNode, _ := newGroupNode(n.gf, group)
+		groupNode, _ := newGroupNode(n.gf, n.gcp, group)
 		return n.NewInode(ctx, groupNode, attrs), 0
 	}
 
@@ -82,7 +87,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 			Ino:  uint64(repository.ID),
 			Mode: fuse.S_IFLNK,
 		}
-		repositoryNode, _ := newRepositoryNode(repository) // TODO
+		repositoryNode, _ := newRepositoryNode(n.gcp, repository)
 		return n.NewInode(ctx, repositoryNode, attrs), 0
 	}
 	return nil, syscall.ENOENT
