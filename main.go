@@ -45,5 +45,5 @@ func main() {
 	gitClient, _ := git.NewClient(gitClientParam)
 
 	// Start the filesystem
-	fs.Start(gitlabClient, gitClient, mountpoint, *gitlabRootGroupID)
+	fs.Start(mountpoint, []int{*gitlabRootGroupID}, []int{}, &fs.FSParam{Gf: gitlabClient, Gcp: gitClient})
 }

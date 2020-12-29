@@ -127,5 +127,6 @@ func (c *gitClient) pull(gpp *gitClonePullParam) error {
 	// Check if the local repo is on default branch
 	// Check if the local repo is dirty
 	// Checkout the remote default branch
+	// TODO
 	return nil
 }

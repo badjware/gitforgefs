@@ -4,8 +4,6 @@ import (
 	"context"
 	"syscall"
 
-	"github.com/badjware/gitlabfs/git"
-
 	"github.com/badjware/gitlabfs/gitlab"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
@@ -13,9 +11,8 @@ import (
 
 type groupNode struct {
 	fs.Inode
+	param *FSParam
 	group *gitlab.Group
-	gf    gitlab.GroupFetcher
-	gcp   git.GitClonerPuller
 }
 
 // Ensure we are implementing the NodeReaddirer interface
@@ -24,30 +21,28 @@ var _ = (fs.NodeReaddirer)((*groupNode)(nil))
 // Ensure we are implementing the NodeLookuper interface
 var _ = (fs.NodeLookuper)((*groupNode)(nil))
 
-func newRootGroupNode(gf gitlab.GroupFetcher, gcp git.GitClonerPuller, gid int) (*groupNode, error) {
-	group, err := gf.FetchGroup(gid)
+func newRootGroupNode(gid int, param *FSParam) (*groupNode, error) {
+	group, err := param.Gf.FetchGroup(gid)
 	if err != nil {
 		return nil, err
 	}
 	node := &groupNode{
+		param: param,
 		group: group,
-		gf:    gf,
-		gcp:   gcp,
 	}
 	return node, nil
 }
 
-func newGroupNode(gf gitlab.GroupFetcher, gcp git.GitClonerPuller, group *gitlab.Group) (*groupNode, error) {
+func newGroupNode(group *gitlab.Group, param *FSParam) (*groupNode, error) {
 	node := &groupNode{
+		param: param,
 		group: group,
-		gf:    gf,
-		gcp:   gcp,
 	}
 	return node, nil
 }
 
 func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
-	groupContent, _ := n.gf.FetchGroupContent(n.group)
+	groupContent, _ := n.param.Gf.FetchGroupContent(n.group)
 	entries := make([]fuse.DirEntry, 0, len(groupContent.Groups)+len(groupContent.Repositories))
 	for _, group := range groupContent.Groups {
 		entries = append(entries, fuse.DirEntry{
@@ -67,7 +62,7 @@ func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 }
 
 func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	groupContent, _ := n.gf.FetchGroupContent(n.group)
+	groupContent, _ := n.param.Gf.FetchGroupContent(n.group)
 
 	// Check if the map of groups contains it
 	group, ok := groupContent.Groups[name]
@@ -76,7 +71,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 			Ino:  uint64(group.ID),
 			Mode: fuse.S_IFDIR,
 		}
-		groupNode, _ := newGroupNode(n.gf, n.gcp, group)
+		groupNode, _ := newGroupNode(group, n.param)
 		return n.NewInode(ctx, groupNode, attrs), 0
 	}
 
@@ -87,7 +82,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 			Ino:  uint64(repository.ID),
 			Mode: fuse.S_IFLNK,
 		}
-		repositoryNode, _ := newRepositoryNode(n.gcp, repository)
+		repositoryNode, _ := newRepositoryNode(repository, n.param)
 		return n.NewInode(ctx, repositoryNode, attrs), 0
 	}
 	return nil, syscall.ENOENT
