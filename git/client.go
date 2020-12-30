@@ -1,10 +1,7 @@
 package git
 
 import (
-	"errors"
 	"net/url"
-	"os"
-	"path/filepath"
 )
 
 type GitClientParam struct {
@@ -13,9 +10,7 @@ type GitClientParam struct {
 	RemoteURL     *url.URL
 	Fetch         bool
 	Checkout      bool
-	SingleBranch  bool
 	PullDepth     int
-	AutoClone     bool
 	AutoPull      bool
 
 	ChanBuffSize    int
@@ -28,22 +23,6 @@ type gitClient struct {
 }
 
 func NewClient(p GitClientParam) (*gitClient, error) {
-	// Some validations
-	if p.RemoteURL == nil {
-		return nil, errors.New("required param RemoteURL is nil")
-	}
-
-	// Setup defaults
-	if p.CloneLocation == "" {
-		dataHome := os.Getenv("XDG_DATA_HOME")
-		if dataHome == "" {
-			dataHome = filepath.Join(os.Getenv("HOME"), ".local/share")
-		}
-		p.CloneLocation = filepath.Join(dataHome, "gitlabfs")
-	}
-	if p.RemoteName == "" {
-		p.RemoteName = "origin"
-	}
 	if p.ChanBuffSize == 0 {
 		p.ChanBuffSize = 500
 	}

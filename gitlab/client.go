@@ -6,12 +6,18 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
+const (
+	PullMethodHTTP = "http"
+	PullMethodSSH  = "ssh"
+)
+
 type GitlabFetcher interface {
 	GroupFetcher
 	UserFetcher
 }
 
 type GitlabClientParam struct {
+	PullMethod string
 }
 
 type gitlabClient struct {
@@ -29,7 +35,8 @@ func NewClient(gitlabUrl string, gitlabToken string, p GitlabClientParam) (*gitl
 	}
 
 	gitlabClient := &gitlabClient{
-		client: client,
+		GitlabClientParam: p,
+		client:            client,
 	}
 	return gitlabClient, nil
 }

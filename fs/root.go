@@ -16,8 +16,8 @@ const (
 )
 
 type FSParam struct {
-	Gitlab gitlab.GitlabFetcher
 	Git    git.GitClonerPuller
+	Gitlab gitlab.GitlabFetcher
 
 	staticInoChan chan uint64
 }
@@ -57,13 +57,15 @@ func (n *rootNode) OnAdd(ctx context.Context) {
 		},
 	)
 	n.AddChild("users", usersInode, false)
+
+	fmt.Println("Mounted and ready to use")
 }
 
-func Start(mountpoint string, rootGroupIds []int, userIds []int, param *FSParam) error {
+func Start(mountpoint string, rootGroupIds []int, userIds []int, param *FSParam, debug bool) error {
 	fmt.Printf("Mounting in %v\n", mountpoint)
 
 	opts := &fs.Options{}
-	opts.Debug = true
+	opts.Debug = debug
 
 	param.staticInoChan = make(chan uint64)
 	root := &rootNode{

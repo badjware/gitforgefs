@@ -84,7 +84,7 @@ func (c *gitlabClient) FetchGroupContent(group *Group) (*GroupContent, error) {
 			return nil, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
 		}
 		for _, gitlabProject := range gitlabProjects {
-			project := NewProjectFromGitlabProject(gitlabProject)
+			project := c.newProjectFromGitlabProject(gitlabProject)
 			content.Projects[project.Name] = &project
 		}
 		if response.CurrentPage >= response.TotalPages {

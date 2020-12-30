@@ -1,6 +1,8 @@
 package gitlab
 
-import "github.com/xanzy/go-gitlab"
+import (
+	"github.com/xanzy/go-gitlab"
+)
 
 type Project struct {
 	ID       int
@@ -8,12 +10,16 @@ type Project struct {
 	CloneURL string
 }
 
-func NewProjectFromGitlabProject(project *gitlab.Project) Project {
+func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) Project {
 	// https://godoc.org/github.com/xanzy/go-gitlab#Project
-	return Project{
+	p := Project{
 		ID:   project.ID,
 		Name: project.Path,
-		// CloneURL: project.HTTPURLToRepo,
-		CloneURL: project.SSHURLToRepo,
 	}
+	if c.PullMethod == PullMethodSSH {
+		p.CloneURL = project.SSHURLToRepo
+	} else {
+		p.CloneURL = project.HTTPURLToRepo
+	}
+	return p
 }

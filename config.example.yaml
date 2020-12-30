@@ -1,0 +1,49 @@
+fs:
+  # The mountpoint. Can be overwritten via the command line.
+  #mountpoint: /mnt
+
+gitlab:
+  # The gitlab url.
+  url: https://gitlab.com
+
+  # The gitlab api token.
+  # Default to anonymous (only public projects will be visible).
+  #token:
+
+  # A list of the group ids to expose their projects in the filesystem.
+  group_ids:
+    - 9970 # gitlab-org
+
+  # A list of the user ids to expose their personal projects in the filesystem.
+  user_ids: []
+
+  # If set to true, the user the api token belongs to will automatically be added to the list of users exposed by the filesystem.
+  include_current_user: true
+
+git:
+  # Path to the local repository cache. Repositories in the filesystem will symlink to a folder in this path.
+  # Default to $XDG_DATA_HOME/gitlabfs, or $HOME/.local/share/gitlabfs if the environment variable $XDG_DATA_HOME is unset.
+  #clone_location:
+
+  # The name of the remote in the local clone.
+  remote: origin
+
+  # Must be set to either "http" or "ssh".
+  # The protocol to configure the git remote on.
+  pull_method: http
+
+  # Must be set to either "init", "no-checkout" or "checkout".
+  # If set to "init", the local clone will be initialized with `git init` and set to track the default branch. (fastest)
+  # If set to "no-checkout", the local clone will be initialized with `git clone --no-checkout`. (slower)
+  # If set to "checkout", the local clone will be initialized with `git clone`. (slowest)
+  # NOTE: If set to "init" or "no-checkout", the local clone will appear empty. Running `git pull` will download the files from the git server.
+  # It's highly recommended to leave this setting on "init".
+  on_clone: init
+
+  # If set to true, the local clone will automatically run `git pull` in the local clone if it's on the default branch and the worktree is clean.
+  # Pulls are asynchronous so it can take a few minutes for all repositories to sync up.
+  # It's highly recommended to leave this setting turned off.
+  auto_pull: false
+
+  # The depth of the git history to pull. Set to 0 to pull the full history.
+  depth: 0
