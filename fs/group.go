@@ -21,8 +21,8 @@ var _ = (fs.NodeReaddirer)((*groupNode)(nil))
 // Ensure we are implementing the NodeLookuper interface
 var _ = (fs.NodeLookuper)((*groupNode)(nil))
 
-func newRootGroupNode(gid int, param *FSParam) (*groupNode, error) {
-	group, err := param.Gf.FetchGroup(gid)
+func newGroupNodeByID(gid int, param *FSParam) (*groupNode, error) {
+	group, err := param.Gitlab.FetchGroup(gid)
 	if err != nil {
 		return nil, err
 	}
@@ -42,19 +42,19 @@ func newGroupNode(group *gitlab.Group, param *FSParam) (*groupNode, error) {
 }
 
 func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
-	groupContent, _ := n.param.Gf.FetchGroupContent(n.group)
-	entries := make([]fuse.DirEntry, 0, len(groupContent.Groups)+len(groupContent.Repositories))
+	groupContent, _ := n.param.Gitlab.FetchGroupContent(n.group)
+	entries := make([]fuse.DirEntry, 0, len(groupContent.Groups)+len(groupContent.Projects))
 	for _, group := range groupContent.Groups {
 		entries = append(entries, fuse.DirEntry{
-			Name: group.Path,
+			Name: group.Name,
 			Ino:  uint64(group.ID),
 			Mode: fuse.S_IFDIR,
 		})
 	}
-	for _, repository := range groupContent.Repositories {
+	for _, project := range groupContent.Projects {
 		entries = append(entries, fuse.DirEntry{
-			Name: repository.Path,
-			Ino:  uint64(repository.ID),
+			Name: project.Name,
+			Ino:  uint64(project.ID),
 			Mode: fuse.S_IFLNK,
 		})
 	}
@@ -62,7 +62,7 @@ func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 }
 
 func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	groupContent, _ := n.param.Gf.FetchGroupContent(n.group)
+	groupContent, _ := n.param.Gitlab.FetchGroupContent(n.group)
 
 	// Check if the map of groups contains it
 	group, ok := groupContent.Groups[name]
@@ -75,14 +75,14 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		return n.NewInode(ctx, groupNode, attrs), 0
 	}
 
-	// Check if the map of repositories contains it
-	repository, ok := groupContent.Repositories[name]
+	// Check if the map of projects contains it
+	project, ok := groupContent.Projects[name]
 	if ok {
 		attrs := fs.StableAttr{
-			Ino:  uint64(repository.ID),
+			Ino:  uint64(project.ID),
 			Mode: fuse.S_IFLNK,
 		}
-		repositoryNode, _ := newRepositoryNode(repository, n.param)
+		repositoryNode, _ := newRepositoryNode(project, n.param)
 		return n.NewInode(ctx, repositoryNode, attrs), 0
 	}
 	return nil, syscall.ENOENT

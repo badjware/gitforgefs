@@ -18,7 +18,7 @@ type projectsNode struct {
 // Ensure we are implementing the NodeOnAdder interface
 var _ = (fs.NodeOnAdder)((*projectsNode)(nil))
 
-func NewProjectsNode(rootGroupIds []int, param *FSParam) *projectsNode {
+func newProjectsNode(rootGroupIds []int, param *FSParam) *projectsNode {
 	return &projectsNode{
 		param:        param,
 		rootGroupIds: rootGroupIds,
@@ -27,7 +27,7 @@ func NewProjectsNode(rootGroupIds []int, param *FSParam) *projectsNode {
 
 func (n *projectsNode) OnAdd(ctx context.Context) {
 	for _, groupID := range n.rootGroupIds {
-		groupNode, err := newRootGroupNode(groupID, n.param)
+		groupNode, err := newGroupNodeByID(groupID, n.param)
 		if err != nil {
 			fmt.Printf("root group fetch fail: %v\n", err)
 		}
@@ -39,6 +39,6 @@ func (n *projectsNode) OnAdd(ctx context.Context) {
 				Mode: fuse.S_IFDIR,
 			},
 		)
-		n.AddChild(groupNode.group.Path, inode, false)
+		n.AddChild(groupNode.group.Name, inode, false)
 	}
 }

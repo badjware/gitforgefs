@@ -16,8 +16,8 @@ const (
 )
 
 type FSParam struct {
-	Gf  gitlab.GroupFetcher
-	Gcp git.GitClonerPuller
+	Gitlab gitlab.GitlabFetcher
+	Git    git.GitClonerPuller
 
 	staticInoChan chan uint64
 }
@@ -34,7 +34,7 @@ var _ = (fs.NodeOnAdder)((*rootNode)(nil))
 func (n *rootNode) OnAdd(ctx context.Context) {
 	projectsInode := n.NewPersistentInode(
 		ctx,
-		NewProjectsNode(
+		newProjectsNode(
 			n.rootGroupIds,
 			n.param,
 		),
@@ -47,7 +47,7 @@ func (n *rootNode) OnAdd(ctx context.Context) {
 
 	usersInode := n.NewPersistentInode(
 		ctx,
-		NewUsersNode(
+		newUsersNode(
 			n.userIds,
 			n.param,
 		),
