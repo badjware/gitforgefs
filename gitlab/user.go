@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/xanzy/go-gitlab"
 )
@@ -20,6 +21,7 @@ type User struct {
 	ID   int
 	Name string
 
+	mux     sync.Mutex
 	content *UserContent
 }
 
@@ -29,6 +31,13 @@ func NewUserFromGitlabUser(user *gitlab.User) User {
 		ID:   user.ID,
 		Name: user.Username,
 	}
+}
+
+func (u *User) InvalidateCache() {
+	u.mux.Lock()
+	defer u.mux.Unlock()
+
+	u.content = nil
 }
 
 func (c *gitlabClient) FetchUser(uid int) (*User, error) {
@@ -50,6 +59,10 @@ func (c *gitlabClient) FetchCurrentUser() (*User, error) {
 }
 
 func (c *gitlabClient) FetchUserContent(user *User) (*UserContent, error) {
+	user.mux.Lock()
+	defer user.mux.Unlock()
+
+	// Get cached data if available
 	if user.content != nil {
 		return user.content, nil
 	}

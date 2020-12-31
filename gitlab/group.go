@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/xanzy/go-gitlab"
 )
@@ -20,6 +21,7 @@ type Group struct {
 	ID   int
 	Name string
 
+	mux     sync.Mutex
 	content *GroupContent
 }
 
@@ -29,6 +31,13 @@ func NewGroupFromGitlabGroup(group *gitlab.Group) Group {
 		ID:   group.ID,
 		Name: group.Path,
 	}
+}
+
+func (g *Group) InvalidateCache() {
+	g.mux.Lock()
+	defer g.mux.Unlock()
+
+	g.content = nil
 }
 
 func (c *gitlabClient) FetchGroup(gid int) (*Group, error) {
@@ -41,6 +50,10 @@ func (c *gitlabClient) FetchGroup(gid int) (*Group, error) {
 }
 
 func (c *gitlabClient) FetchGroupContent(group *Group) (*GroupContent, error) {
+	group.mux.Lock()
+	defer group.mux.Unlock()
+
+	// Get cached data if available
 	if group.content != nil {
 		return group.content, nil
 	}

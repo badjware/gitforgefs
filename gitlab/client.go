@@ -16,6 +16,10 @@ type GitlabFetcher interface {
 	UserFetcher
 }
 
+type Refresher interface {
+	InvalidateCache()
+}
+
 type GitlabClientParam struct {
 	PullMethod string
 }

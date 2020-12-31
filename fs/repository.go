@@ -18,7 +18,6 @@ type RepositoryNode struct {
 var _ = (fs.NodeReadlinker)((*RepositoryNode)(nil))
 
 func newRepositoryNode(project *gitlab.Project, param *FSParam) (*RepositoryNode, error) {
-
 	node := &RepositoryNode{
 		param:   param,
 		project: project,

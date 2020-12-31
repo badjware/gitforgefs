@@ -15,6 +15,12 @@ const (
 	staticInodeStart = uint64(int(^(uint(0))>>1)) + 1
 )
 
+type staticNode interface {
+	fs.InodeEmbedder
+	Ino() uint64
+	Mode() uint32
+}
+
 type FSParam struct {
 	Git    git.GitClonerPuller
 	Gitlab gitlab.GitlabFetcher

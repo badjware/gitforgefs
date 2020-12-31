@@ -71,7 +71,9 @@ func (n *usersNode) OnAdd(ctx context.Context) {
 type userNode struct {
 	fs.Inode
 	param *FSParam
-	user  *gitlab.User
+
+	user        *gitlab.User
+	staticNodes map[string]staticNode
 }
 
 // Ensure we are implementing the NodeReaddirer interface
@@ -88,6 +90,9 @@ func newUserNodeByID(uid int, param *FSParam) (*userNode, error) {
 	node := &userNode{
 		param: param,
 		user:  user,
+		staticNodes: map[string]staticNode{
+			".refresh": newRefreshNode(user, param),
+		},
 	}
 	return node, nil
 }
@@ -96,13 +101,16 @@ func newUserNode(user *gitlab.User, param *FSParam) (*userNode, error) {
 	node := &userNode{
 		param: param,
 		user:  user,
+		staticNodes: map[string]staticNode{
+			".refresh": newRefreshNode(user, param),
+		},
 	}
 	return node, nil
 }
 
 func (n *userNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 	userContent, _ := n.param.Gitlab.FetchUserContent(n.user)
-	entries := make([]fuse.DirEntry, 0, len(userContent.Projects))
+	entries := make([]fuse.DirEntry, 0, len(userContent.Projects)+len(n.staticNodes))
 	for _, project := range userContent.Projects {
 		entries = append(entries, fuse.DirEntry{
 			Name: project.Name,
@@ -110,11 +118,20 @@ func (n *userNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 			Mode: fuse.S_IFLNK,
 		})
 	}
+	for name, staticNode := range n.staticNodes {
+		entries = append(entries, fuse.DirEntry{
+			Name: name,
+			Ino:  staticNode.Ino(),
+			Mode: staticNode.Mode(),
+		})
+	}
 	return fs.NewListDirStream(entries), 0
 }
 
 func (n *userNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
 	userContent, _ := n.param.Gitlab.FetchUserContent(n.user)
+
+	// Check if the map of projects contains it
 	project, ok := userContent.Projects[name]
 	if ok {
 		attrs := fs.StableAttr{
@@ -124,5 +141,16 @@ func (n *userNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) 
 		repositoryNode, _ := newRepositoryNode(project, n.param)
 		return n.NewInode(ctx, repositoryNode, attrs), 0
 	}
+
+	// Check if the map of static nodes contains it
+	staticNode, ok := n.staticNodes[name]
+	if ok {
+		attrs := fs.StableAttr{
+			Ino:  staticNode.Ino(),
+			Mode: staticNode.Mode(),
+		}
+		return n.NewInode(ctx, staticNode, attrs), 0
+	}
+
 	return nil, syscall.ENOENT
 }
