@@ -34,6 +34,7 @@ git:
 
   # Must be set to either "init", "no-checkout" or "checkout".
   # If set to "init", the local clone will be initialized with `git init` and set to track the default branch. (fastest)
+  # If set to "init-pull", the local clone will be initialized with `git init` and will than be followed up by an asynchronous `git pull`. (faster)
   # If set to "no-checkout", the local clone will be initialized with `git clone --no-checkout`. (slower)
   # If set to "checkout", the local clone will be initialized with `git clone`. (slowest)
   # NOTE: If set to "init" or "no-checkout", the local clone will appear empty. Running `git pull` will download the files from the git server.
@@ -46,4 +47,16 @@ git:
   auto_pull: false
 
   # The depth of the git history to pull. Set to 0 to pull the full history.
-  depth: 0
+  depth: 1
+
+  # The number of `git clone` operation that can be queued up
+  clone_queue_size: 200
+
+  # The number of parallel `git clone` operation that is allowed to run at once
+  clone_worker_count: 5
+
+  # The number of `git pull` operation that can be queued up
+  pull_queue_size: 500
+
+  # The number of parallel `git pull` operation that is allowed to run at once
+  pull_worker_count: 5

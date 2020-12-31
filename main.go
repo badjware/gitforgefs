@@ -15,6 +15,7 @@ import (
 
 const (
 	OnCloneInit       = "init"
+	OnCloneInitPull   = "init-pull"
 	OnCloneNoCheckout = "no-checkout"
 	OnCloneCheckout   = "checkout"
 )
@@ -36,12 +37,16 @@ type (
 		IncludeCurrentUser bool   `yaml:"include_current_user,omitempty"`
 	}
 	GitConfig struct {
-		CloneLocation string `yaml:"clone_location,omitempty"`
-		Remote        string `yaml:"remote,omitempty"`
-		PullMethod    string `yaml:"pull_method,omitempty"`
-		OnClone       string `yaml:"on_clone,omitempty"`
-		AutoPull      bool   `yaml:"auto_pull,omitempty"`
-		Depth         int    `yaml:"depth,omitempty"`
+		CloneLocation    string `yaml:"clone_location,omitempty"`
+		Remote           string `yaml:"remote,omitempty"`
+		PullMethod       string `yaml:"pull_method,omitempty"`
+		OnClone          string `yaml:"on_clone,omitempty"`
+		AutoPull         bool   `yaml:"auto_pull,omitempty"`
+		Depth            int    `yaml:"depth,omitempty"`
+		CloneQueueSize   int    `yaml:"clone_queue_size,omitempty"`
+		CloneWorkerCount int    `yaml:"clone_worker_count,omitempty"`
+		PullQueueSize    int    `yaml:"pull_queue_size,omitempty"`
+		PullWorkerCount  int    `yaml:"pull_worker_count,omitempty"`
 	}
 )
 
@@ -65,12 +70,16 @@ func loadConfig(configPath string) (*Config, error) {
 			IncludeCurrentUser: true,
 		},
 		Git: GitConfig{
-			CloneLocation: defaultCloneLocation,
-			Remote:        "origin",
-			PullMethod:    "http",
-			OnClone:       "init",
-			AutoPull:      false,
-			Depth:         0,
+			CloneLocation:    defaultCloneLocation,
+			Remote:           "origin",
+			PullMethod:       "http",
+			OnClone:          "init",
+			AutoPull:         false,
+			Depth:            0,
+			CloneQueueSize:   200,
+			CloneWorkerCount: 5,
+			PullQueueSize:    500,
+			PullWorkerCount:  5,
 		},
 	}
 
@@ -109,29 +118,42 @@ func makeGitConfig(config *Config) (*git.GitClientParam, error) {
 	}
 
 	// parse on_clone
-	fetch := false
+	pullAfterClone := false
+	clone := false
 	checkout := false
 	if config.Git.OnClone == OnCloneInit {
-		fetch = false
+		pullAfterClone = false
+		clone = false
+		checkout = false
+	} else if config.Git.OnClone == OnCloneInitPull {
+		pullAfterClone = true
+		clone = false
 		checkout = false
 	} else if config.Git.OnClone == OnCloneNoCheckout {
-		fetch = true
+		pullAfterClone = false
+		clone = true
 		checkout = false
 	} else if config.Git.OnClone == OnCloneCheckout {
-		fetch = true
+		pullAfterClone = false
+		clone = true
 		checkout = true
 	} else {
 		return nil, fmt.Errorf("on_clone must be either \"%v\", \"%v\" or \"%V\"", OnCloneInit, OnCloneNoCheckout, OnCloneCheckout)
 	}
 
 	return &git.GitClientParam{
-		CloneLocation: config.Git.CloneLocation,
-		RemoteName:    config.Git.Remote,
-		RemoteURL:     parsedGitlabURL,
-		Fetch:         fetch,
-		Checkout:      checkout,
-		AutoPull:      config.Git.AutoPull,
-		PullDepth:     config.Git.Depth,
+		CloneLocation:    config.Git.CloneLocation,
+		RemoteName:       config.Git.Remote,
+		RemoteURL:        parsedGitlabURL,
+		PullAfterClone:   pullAfterClone,
+		Clone:            clone,
+		Checkout:         checkout,
+		AutoPull:         config.Git.AutoPull,
+		PullDepth:        config.Git.Depth,
+		CloneBuffSize:    config.Git.CloneQueueSize,
+		CloneWorkerCount: config.Git.CloneWorkerCount,
+		PullBuffSize:     config.Git.PullQueueSize,
+		PullWorkerCount:  config.Git.PullWorkerCount,
 	}, nil
 }
 
