@@ -54,8 +54,10 @@ func (c *gitlabClient) FetchGroupContent(group *Group) (*GroupContent, error) {
 	ListGroupsOpt := &gitlab.ListSubgroupsOptions{
 		ListOptions: gitlab.ListOptions{
 			Page:    1,
-			PerPage: 1000,
-		}}
+			PerPage: 100,
+		},
+		AllAvailable: gitlab.Bool(true),
+	}
 	for {
 		gitlabGroups, response, err := c.client.Groups.ListSubgroups(group.ID, ListGroupsOpt)
 		if err != nil {
@@ -76,7 +78,7 @@ func (c *gitlabClient) FetchGroupContent(group *Group) (*GroupContent, error) {
 	listProjectOpt := &gitlab.ListGroupProjectsOptions{
 		ListOptions: gitlab.ListOptions{
 			Page:    1,
-			PerPage: 1000,
+			PerPage: 100,
 		}}
 	for {
 		gitlabProjects, response, err := c.client.Groups.ListGroupProjects(group.ID, listProjectOpt)

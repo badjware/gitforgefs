@@ -62,7 +62,7 @@ func (c *gitlabClient) FetchUserContent(user *User) (*UserContent, error) {
 	listProjectOpt := &gitlab.ListProjectsOptions{
 		ListOptions: gitlab.ListOptions{
 			Page:    1,
-			PerPage: 1000,
+			PerPage: 100,
 		}}
 	for {
 		gitlabProjects, response, err := c.client.Projects.ListUserProjects(user.ID, listProjectOpt)
