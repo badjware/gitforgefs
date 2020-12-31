@@ -32,7 +32,7 @@ git:
   # The protocol to configure the git remote on.
   pull_method: http
 
-  # Must be set to either "init", "no-checkout" or "checkout".
+  # Must be set to either "init", init-pull", "no-checkout" or "checkout".
   # If set to "init", the local clone will be initialized with `git init` and set to track the default branch. (fastest)
   # If set to "init-pull", the local clone will be initialized with `git init` and will than be followed up by an asynchronous `git pull`. (faster)
   # If set to "no-checkout", the local clone will be initialized with `git clone --no-checkout`. (slower)
