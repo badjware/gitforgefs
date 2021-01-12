@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -157,6 +158,48 @@ func makeGitConfig(config *Config) (*git.GitClientParam, error) {
 	}, nil
 }
 
+func ValidateCredentials(gitlabUrl string, gitlabToken string) error {
+
+	// add api suffix
+	url := gitlabUrl + "/api/v4/groups"
+	token := gitlabToken
+
+	// init header with token, if token is empty, then use random string
+	req, err := http.NewRequest("GET", url, nil)
+	if token != "" {
+		req.Header.Set("PRIVATE-TOKEN", token)
+	} else {
+		req.Header.Set("PRIVATE-TOKEN", "notoken")
+	}
+
+	client := &http.Client{}
+
+	// Check for redirect
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		for key, val := range via[0].Header {
+			req.Header[key] = val
+		}
+		return err
+	}
+
+	// Get response
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("Error on response: %s\n", err)
+		os.Exit(2)
+	}
+
+	defer resp.Body.Close()
+
+	// Get status code from response
+	if resp.StatusCode != 200 {
+		fmt.Printf("Error: %s\n", resp.Status)
+		os.Exit(2)
+	}
+
+	return nil
+}
+
 func main() {
 	configPath := flag.String("config", "", "the config file")
 	debug := flag.Bool("debug", false, "enable debug logging")
@@ -167,6 +210,9 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	// Validate Credentials
+	ValidateCredentials(config.Gitlab.URL, config.Gitlab.Token)
 
 	// Configure mountpoint
 	mountpoint := config.FS.Mountpoint
