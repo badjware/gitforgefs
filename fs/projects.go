@@ -30,6 +30,9 @@ func (n *projectsNode) OnAdd(ctx context.Context) {
 		groupNode, err := newGroupNodeByID(groupID, n.param)
 		if err != nil {
 			fmt.Printf("root group fetch fail: %v\n", err)
+			fmt.Printf("Please verify the group exists, is public or a token with sufficient permissions is set in the config files.\n")
+			fmt.Printf("Skipping group %v\n", groupID)
+			return
 		}
 		inode := n.NewPersistentInode(
 			ctx,

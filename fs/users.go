@@ -55,6 +55,9 @@ func (n *usersNode) OnAdd(ctx context.Context) {
 		userNode, err := newUserNodeByID(userID, n.param)
 		if err != nil {
 			fmt.Printf("user fetch fail: %v\n", err)
+			fmt.Printf("Please verify the user exists and token with sufficient permissions is set in the config files.\n")
+			fmt.Printf("Skipping user %v\n", userID)
+			return
 		}
 		inode := n.NewPersistentInode(
 			ctx,
