@@ -29,7 +29,7 @@ func newRepositoryNode(project *gitlab.Project, param *FSParam) (*RepositoryNode
 
 func (n *RepositoryNode) Readlink(ctx context.Context) ([]byte, syscall.Errno) {
 	// Create the local copy of the repo
-	localRepoLoc, _ := n.param.Git.CloneOrPull(n.project.CloneURL, n.project.ID, "master")
+	localRepoLoc, _ := n.param.Git.CloneOrPull(n.project.CloneURL, n.project.ID, n.project.DefaultBranch)
 
 	return []byte(localRepoLoc), 0
 }

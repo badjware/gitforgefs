@@ -82,9 +82,12 @@ func (c *gitClient) clone(gcp *gitCloneParam) error {
 		if err != nil {
 			return fmt.Errorf("failed to retrieve worktree of git repo %v: %v", gcp.dst, err)
 		}
-		w.Checkout(&git.CheckoutOptions{
+		err = w.Checkout(&git.CheckoutOptions{
 			Branch: branchRef,
 		})
+		if err != nil {
+			return fmt.Errorf("failed to checkout %v of git repo %v: %v", branchRef, gcp.dst, err)
+		}
 	}
 	if c.PullAfterClone {
 		// Dispatch to pull worker
