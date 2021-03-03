@@ -172,11 +172,15 @@ func main() {
 	gitlabClient, _ := gitlab.NewClient(config.Gitlab.URL, config.Gitlab.Token, *gitlabClientParam)
 
 	// Start the filesystem
-	fs.Start(
+	err = fs.Start(
 		mountpoint,
 		config.Gitlab.GroupIDs,
 		config.Gitlab.UserIDs,
 		&fs.FSParam{Git: gitClient, Gitlab: gitlabClient},
 		*debug,
 	)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
