@@ -86,7 +86,7 @@ func Start(mountpoint string, rootGroupIds []int, userIds []int, param *FSParam,
 	if err != nil {
 		return fmt.Errorf("mount failed: %v", err)
 	}
-	server.Wait()
+	server.Serve()
 
 	return nil
 }
