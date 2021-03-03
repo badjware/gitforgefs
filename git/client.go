@@ -8,19 +8,22 @@ import (
 	"strconv"
 )
 
+const (
+	CloneInit  = iota
+	CloneClone = iota
+)
+
 type GitClonerPuller interface {
 	CloneOrPull(url string, pid int, defaultBranch string) (localRepoLoc string, err error)
 }
 
 type GitClientParam struct {
-	CloneLocation  string
-	RemoteName     string
-	RemoteURL      *url.URL
-	PullAfterClone bool
-	Clone          bool
-	Checkout       bool
-	PullDepth      int
-	AutoPull       bool
+	CloneLocation string
+	RemoteName    string
+	RemoteURL     *url.URL
+	CloneMethod   int
+	PullDepth     int
+	AutoPull      bool
 
 	CloneBuffSize    int
 	CloneWorkerCount int

@@ -13,13 +13,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	OnCloneInit       = "init"
-	OnCloneInitPull   = "init-pull"
-	OnCloneNoCheckout = "no-checkout"
-	OnCloneCheckout   = "checkout"
-)
-
 type (
 	Config struct {
 		FS     FSConfig     `yaml:"fs,omitempty"`
@@ -118,36 +111,20 @@ func makeGitConfig(config *Config) (*git.GitClientParam, error) {
 	}
 
 	// parse on_clone
-	pullAfterClone := false
-	clone := false
-	checkout := false
-	if config.Git.OnClone == OnCloneInit {
-		pullAfterClone = false
-		clone = false
-		checkout = false
-	} else if config.Git.OnClone == OnCloneInitPull {
-		pullAfterClone = true
-		clone = false
-		checkout = false
-	} else if config.Git.OnClone == OnCloneNoCheckout {
-		pullAfterClone = false
-		clone = true
-		checkout = false
-	} else if config.Git.OnClone == OnCloneCheckout {
-		pullAfterClone = false
-		clone = true
-		checkout = true
+	cloneMethod := 0
+	if config.Git.OnClone == "init" {
+		cloneMethod = git.CloneInit
+	} else if config.Git.OnClone == "clone" {
+		cloneMethod = git.CloneClone
 	} else {
-		return nil, fmt.Errorf("on_clone must be either \"%v\", \"%v\" or \"%V\"", OnCloneInit, OnCloneNoCheckout, OnCloneCheckout)
+		return nil, fmt.Errorf("on_clone must be either \"init\" or \"clone\"")
 	}
 
 	return &git.GitClientParam{
 		CloneLocation:    config.Git.CloneLocation,
 		RemoteName:       config.Git.Remote,
 		RemoteURL:        parsedGitlabURL,
-		PullAfterClone:   pullAfterClone,
-		Clone:            clone,
-		Checkout:         checkout,
+		CloneMethod:      cloneMethod,
 		AutoPull:         config.Git.AutoPull,
 		PullDepth:        config.Git.Depth,
 		CloneBuffSize:    config.Git.CloneQueueSize,

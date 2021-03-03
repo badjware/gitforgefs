@@ -23,17 +23,7 @@ func (c *gitClient) pullWorker() {
 }
 
 func (c *gitClient) pull(gpp *gitPullParam) error {
-	// r, err := git.PlainOpen(gpp.repoPath)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to open git repo %v: %v", gpp.repoPath, err)
-	// }
-	// w, err := r.Worktree()
-	// if err != nil {
-	// 	return fmt.Errorf("failed to retrieve worktree of git repo %v: %v", gpp.repoPath, err)
-	// }
-
 	// Check if the local repo is on default branch
-	// headRef, err := r.Head()
 	branchName, err := utils.ExecProcessInDir(
 		gpp.repoPath, // workdir
 		"git", "branch",
@@ -44,6 +34,7 @@ func (c *gitClient) pull(gpp *gitPullParam) error {
 	}
 
 	if branchName == gpp.defaultBranch {
+		// Pull the repo
 		_, err = utils.ExecProcessInDir(
 			gpp.repoPath, // workdir
 			"git", "pull",
