@@ -8,7 +8,7 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
-type projectsNode struct {
+type groupsNode struct {
 	fs.Inode
 	param *FSParam
 
@@ -16,16 +16,16 @@ type projectsNode struct {
 }
 
 // Ensure we are implementing the NodeOnAdder interface
-var _ = (fs.NodeOnAdder)((*projectsNode)(nil))
+var _ = (fs.NodeOnAdder)((*groupsNode)(nil))
 
-func newProjectsNode(rootGroupIds []int, param *FSParam) *projectsNode {
-	return &projectsNode{
+func newGroupsNode(rootGroupIds []int, param *FSParam) *groupsNode {
+	return &groupsNode{
 		param:        param,
 		rootGroupIds: rootGroupIds,
 	}
 }
 
-func (n *projectsNode) OnAdd(ctx context.Context) {
+func (n *groupsNode) OnAdd(ctx context.Context) {
 	for _, groupID := range n.rootGroupIds {
 		groupNode, err := newGroupNodeByID(groupID, n.param)
 		if err != nil {

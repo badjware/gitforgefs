@@ -38,9 +38,9 @@ type rootNode struct {
 var _ = (fs.NodeOnAdder)((*rootNode)(nil))
 
 func (n *rootNode) OnAdd(ctx context.Context) {
-	projectsInode := n.NewPersistentInode(
+	groupsInode := n.NewPersistentInode(
 		ctx,
-		newProjectsNode(
+		newGroupsNode(
 			n.rootGroupIds,
 			n.param,
 		),
@@ -49,7 +49,7 @@ func (n *rootNode) OnAdd(ctx context.Context) {
 			Mode: fuse.S_IFDIR,
 		},
 	)
-	n.AddChild("projects", projectsInode, false)
+	n.AddChild("groups", groupsInode, false)
 
 	usersInode := n.NewPersistentInode(
 		ctx,
