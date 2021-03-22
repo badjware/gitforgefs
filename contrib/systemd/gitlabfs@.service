@@ -1,0 +1,9 @@
+[Unit]
+Description=FUSE filesystem for gitlab groups and projects (%i)
+After=network-online.target
+
+[Service]
+ExecStart=%h/go/bin/gitlabfs -config %E/gitlabfs/%i.yaml
+
+[Install]
+WantedBy=network-online.target

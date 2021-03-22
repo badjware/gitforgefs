@@ -98,6 +98,10 @@ To stop the filesystem, use the command `umount /path/to/mountpoint` to cleanly 
 
 If `gitlabfs` is not cleanly stopped, you might start seeing the error "transport endpoint is not connected" when trying to access the mountpoint, even preventing from mounting back the filesystem on the same mountpoint. To fix this, use `umount` as root user, eg: `sudo umount /path/to/mountpoint`.
 
+### Running automatically on user login
+
+See [./contrib/systemd](contrib/systemd) for instructions on how to configure a systemd service to automatically run gitlabfs on user login.
+
 ## Caching
 
 To reduce the number of calls to the Gitlab api and improve the responsiveness of the filesystem, `gitlabfs` will cache the content of the group in memory. If a group or project is renamed, created or deleted from Gitlab, these change will not appear in the filesystem. To force `gitlabfs` to refresh its cache, use `touch .refresh` in the folder to refresh to force `gitlabfs` to query Gitlab for the list of groups and projects again.
