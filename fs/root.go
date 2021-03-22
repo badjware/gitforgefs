@@ -3,6 +3,9 @@ package fs
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/badjware/gitlabfs/git"
 	"github.com/badjware/gitlabfs/gitlab"
@@ -86,6 +89,11 @@ func Start(mountpoint string, rootGroupIds []int, userIds []int, param *FSParam,
 	if err != nil {
 		return fmt.Errorf("mount failed: %v", err)
 	}
+
+	signalChan := make(chan os.Signal)
+	go signalHandler(signalChan, server)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
 	server.Serve()
 
 	return nil
@@ -96,5 +104,16 @@ func staticInoGenerator(staticInoChan chan<- uint64) {
 	for {
 		staticInoChan <- i
 		i++
+	}
+}
+
+func signalHandler(signalChan <-chan os.Signal, server *fuse.Server) {
+	for {
+		s := <-signalChan
+		fmt.Printf("Caught %v: stopping\n", s)
+		err := server.Unmount()
+		if err != nil {
+			fmt.Printf("Failed to unmount: %v\n", err)
+		}
 	}
 }
