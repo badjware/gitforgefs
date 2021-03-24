@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -50,12 +51,16 @@ func (c *gitlabClient) FetchUser(uid int) (*User, error) {
 }
 
 func (c *gitlabClient) FetchCurrentUser() (*User, error) {
-	gitlabUser, _, err := c.client.Users.CurrentUser()
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch current user: %v", err)
+	if c.IncludeCurrentUser {
+		gitlabUser, _, err := c.client.Users.CurrentUser()
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch current user: %v", err)
+		}
+		user := NewUserFromGitlabUser(gitlabUser)
+		return &user, nil
 	}
-	user := NewUserFromGitlabUser(gitlabUser)
-	return &user, nil
+	// no current user to fetch, return nil
+	return nil, errors.New("current user fetch is disabled")
 }
 
 func (c *gitlabClient) FetchUserContent(user *User) (*UserContent, error) {

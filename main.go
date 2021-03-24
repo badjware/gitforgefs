@@ -99,7 +99,8 @@ func makeGitlabConfig(config *Config) (*gitlab.GitlabClientParam, error) {
 	}
 
 	return &gitlab.GitlabClientParam{
-		PullMethod: config.Git.PullMethod,
+		PullMethod:         config.Git.PullMethod,
+		IncludeCurrentUser: config.Gitlab.IncludeCurrentUser && config.Gitlab.Token != "",
 	}, nil
 }
 

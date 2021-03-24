@@ -21,7 +21,8 @@ type Refresher interface {
 }
 
 type GitlabClientParam struct {
-	PullMethod string
+	PullMethod         string
+	IncludeCurrentUser bool
 }
 
 type gitlabClient struct {
