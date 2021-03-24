@@ -94,7 +94,8 @@ func Start(mountpoint string, rootGroupIds []int, userIds []int, param *FSParam,
 	go signalHandler(signalChan, server)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
-	server.Serve()
+	// server.Serve() is already called in fs.Mount() so we shouldn't call it ourself. We wait for the server to terminate.
+	server.Wait()
 
 	return nil
 }
@@ -108,6 +109,11 @@ func staticInoGenerator(staticInoChan chan<- uint64) {
 }
 
 func signalHandler(signalChan <-chan os.Signal, server *fuse.Server) {
+	err := server.WaitMount()
+	if err != nil {
+		fmt.Printf("failed to start exit signal handler: %v\n", err)
+		return
+	}
 	for {
 		s := <-signalChan
 		fmt.Printf("Caught %v: stopping\n", s)
