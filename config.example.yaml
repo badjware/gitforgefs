@@ -35,10 +35,9 @@ git:
   pull_method: http
 
   # Must be set to either "init", or "clone".
-  # If set to "init", the local clone will be initialized with `git init` and set to track the default branch. (fastest)
-  # If set to "clone", the local clone will be initialized with `git clone`. (slowest)
-  # NOTE: If set to "init", the local clone will appear empty. Running `git pull` will download the files from the git server.
-  # It's highly recommended to leave this setting on "init".
+  # If set to "init", the local copy will be initialized with `git init` and the remote is configured manually. The git server is nerver queried. (fast)
+  # If set to "clone", the local copy will be initialized with `git clone`. (slow)
+  # NOTE: If set to "init", the local clone will appear empty. Running `git pull master` will download the files from the git server.
   on_clone: init
 
   # If set to true, the local clone will automatically run `git pull` in the local clone if it's on the default branch and the worktree is clean.

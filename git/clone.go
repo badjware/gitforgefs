@@ -49,13 +49,37 @@ func (c *gitClient) clone(gcp *gitCloneParam) error {
 		_, err = utils.ExecProcessInDir(
 			gcp.dst, // workdir
 			"git", "remote", "add",
-			"-t", gcp.defaultBranch,
+			"-m", gcp.defaultBranch,
 			"--",
 			c.RemoteName, // name
 			gcp.url,      // url
 		)
 		if err != nil {
 			return fmt.Errorf("failed to setup remote %v in git repo %v: %v", gcp.url, gcp.dst, err)
+		}
+
+		// Configure the default branch
+		_, err = utils.ExecProcessInDir(
+			gcp.dst, // workdir
+			"git", "config", "--local",
+			"--",
+			fmt.Sprintf("branch.%s.remote", gcp.defaultBranch), // key
+			c.RemoteName, // value
+
+		)
+		if err != nil {
+			return fmt.Errorf("failed to setup default branch remote in git repo %v: %v", gcp.dst, err)
+		}
+		_, err = utils.ExecProcessInDir(
+			gcp.dst, // workdir
+			"git", "config", "--local",
+			"--",
+			fmt.Sprintf("branch.%s.merge", gcp.defaultBranch), // key
+			fmt.Sprintf("refs/heads/%s", gcp.defaultBranch),   // value
+
+		)
+		if err != nil {
+			return fmt.Errorf("failed to setup default branch merge in git repo %v: %v", gcp.dst, err)
 		}
 	} else {
 		// Clone the repo
