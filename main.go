@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/badjware/gitlabfs/fs"
 	"github.com/badjware/gitlabfs/git"
@@ -20,7 +21,8 @@ type (
 		Git    GitConfig    `yaml:"git,omitempty"`
 	}
 	FSConfig struct {
-		Mountpoint string `yaml:"mountpoint,omitempty"`
+		Mountpoint   string `yaml:"mountpoint,omitempty"`
+		MountOptions string `yaml:"mountoptions,omitempty"`
 	}
 	GitlabConfig struct {
 		URL                string `yaml:"url,omitempty"`
@@ -53,7 +55,8 @@ func loadConfig(configPath string) (*Config, error) {
 
 	config := &Config{
 		FS: FSConfig{
-			Mountpoint: "",
+			Mountpoint:   "",
+			MountOptions: "nodev,nosuid",
 		},
 		Gitlab: GitlabConfig{
 			URL:                "https://gitlab.com",
@@ -136,8 +139,16 @@ func makeGitConfig(config *Config) (*git.GitClientParam, error) {
 }
 
 func main() {
-	configPath := flag.String("config", "", "the config file")
-	debug := flag.Bool("debug", false, "enable debug logging")
+	configPath := flag.String("config", "", "The config file")
+	mountoptionsFlag := flag.String("o", "", "Filesystem mount options. See mount.fuse(8)")
+	debug := flag.Bool("debug", false, "Enable debug logging")
+
+	flag.Usage = func() {
+		fmt.Println("USAGE:")
+		fmt.Printf("    %s MOUNTPOINT\n\n", os.Args[0])
+		fmt.Println("OPTIONS:")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	config, err := loadConfig(*configPath)
@@ -152,8 +163,19 @@ func main() {
 		mountpoint = flag.Arg(0)
 	}
 	if mountpoint == "" {
-		fmt.Printf("usage: %s MOUNTPOINT\n", os.Args[0])
+		fmt.Println("Mountpoint is not configured in config file and missing from command-line arguments")
+		flag.Usage()
 		os.Exit(2)
+	}
+
+	// Configure mountoptions
+	mountoptions := config.FS.MountOptions
+	if *mountoptionsFlag != "" {
+		mountoptions = *mountoptionsFlag
+	}
+	parsedMountoptions := make([]string, 0)
+	if mountoptions != "" {
+		parsedMountoptions = strings.Split(mountoptions, ",")
 	}
 
 	// Create the git client
@@ -175,9 +197,8 @@ func main() {
 	// Start the filesystem
 	err = fs.Start(
 		mountpoint,
-		config.Gitlab.GroupIDs,
-		config.Gitlab.UserIDs,
-		&fs.FSParam{Git: gitClient, Gitlab: gitlabClient},
+		parsedMountoptions,
+		&fs.FSParam{Git: gitClient, Gitlab: gitlabClient, RootGroupIds: config.Gitlab.GroupIDs, UserIds: config.Gitlab.UserIDs},
 		*debug,
 	)
 	if err != nil {

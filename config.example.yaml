@@ -2,6 +2,10 @@ fs:
   # The mountpoint. Can be overwritten via the command line.
   #mountpoint: /mnt
 
+  # Mount options to pass to `fusermount` as its `-o` argument. Can be overwritten via the command line.
+  # See mount.fuse(8) for the full list of options.
+  #mountoptions: nodev,nosuid
+
 gitlab:
   # The gitlab url.
   url: https://gitlab.com

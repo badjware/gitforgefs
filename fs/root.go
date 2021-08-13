@@ -28,6 +28,9 @@ type FSParam struct {
 	Git    git.GitClonerPuller
 	Gitlab gitlab.GitlabFetcher
 
+	RootGroupIds []int
+	UserIds      []int
+
 	staticInoChan chan uint64
 }
 
@@ -70,17 +73,18 @@ func (n *rootNode) OnAdd(ctx context.Context) {
 	fmt.Println("Mounted and ready to use")
 }
 
-func Start(mountpoint string, rootGroupIds []int, userIds []int, param *FSParam, debug bool) error {
+func Start(mountpoint string, mountoptions []string, param *FSParam, debug bool) error {
 	fmt.Printf("Mounting in %v\n", mountpoint)
 
 	opts := &fs.Options{}
+	opts.MountOptions.Options = mountoptions
 	opts.Debug = debug
 
 	param.staticInoChan = make(chan uint64)
 	root := &rootNode{
 		param:        param,
-		rootGroupIds: rootGroupIds,
-		userIds:      userIds,
+		rootGroupIds: param.RootGroupIds,
+		userIds:      param.UserIds,
 	}
 
 	go staticInoGenerator(root.param.staticInoChan)
