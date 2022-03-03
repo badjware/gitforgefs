@@ -38,10 +38,8 @@ type (
 		OnClone          string `yaml:"on_clone,omitempty"`
 		AutoPull         bool   `yaml:"auto_pull,omitempty"`
 		Depth            int    `yaml:"depth,omitempty"`
-		CloneQueueSize   int    `yaml:"clone_queue_size,omitempty"`
-		CloneWorkerCount int    `yaml:"clone_worker_count,omitempty"`
-		PullQueueSize    int    `yaml:"pull_queue_size,omitempty"`
-		PullWorkerCount  int    `yaml:"pull_worker_count,omitempty"`
+		QueueSize        int    `yaml:"queue_size,omitempty"`
+		QueueWorkerCount int    `yaml:"worker_count,omitempty"`
 	}
 )
 
@@ -72,10 +70,8 @@ func loadConfig(configPath string) (*Config, error) {
 			OnClone:          "init",
 			AutoPull:         false,
 			Depth:            0,
-			CloneQueueSize:   200,
-			CloneWorkerCount: 5,
-			PullQueueSize:    500,
-			PullWorkerCount:  5,
+			QueueSize:        200,
+			QueueWorkerCount: 5,
 		},
 	}
 
@@ -131,10 +127,8 @@ func makeGitConfig(config *Config) (*git.GitClientParam, error) {
 		CloneMethod:      cloneMethod,
 		AutoPull:         config.Git.AutoPull,
 		PullDepth:        config.Git.Depth,
-		CloneBuffSize:    config.Git.CloneQueueSize,
-		CloneWorkerCount: config.Git.CloneWorkerCount,
-		PullBuffSize:     config.Git.PullQueueSize,
-		PullWorkerCount:  config.Git.PullWorkerCount,
+		QueueSize:        config.Git.QueueSize,
+		QueueWorkerCount: config.Git.QueueWorkerCount,
 	}, nil
 }
 

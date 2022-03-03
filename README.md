@@ -109,8 +109,8 @@ To reduce the number of calls to the Gitlab api and improve the responsiveness o
 While the filesystem lives in memory, the git repositories that are cloned are saved on disk. By default, they are saved in `$XDG_DATA_HOME/gitlabfs` or `$HOME/.local/share/gitlabfs`, if `$XDG_DATA_HOME` is unset. `gitlabfs` symlink to the local clone of that repo. The local clone is unaffected by project rename or archive/unarchive in Gitlab and a given project will always point to the correct local folder.
 
 ## Known issues / Future improvements
-* There is a race condition that could happen when interacting with git that needs to be fixed.
-* Cloning and pulling repositories is currently very resource-intensive, especially on large set of repositories. Need to track down what causes this to happen. For now, leaving `on_clone` set to `init` and `auto_pull` to `false` in the configuration avoids the issue.
+* ~~There is a race condition that could happen when interacting with git that needs to be fixed.~~
+* ~~Cloning and pulling repositories is currently very resource-intensive, especially on large set of repositories. Need to track down what causes this to happen. For now, leaving `on_clone` set to `init` and `auto_pull` to `false` in the configuration avoids the issue.~~
 * Cache persists forever until a manual refresh is requested. Some way to automatically refresh would be nice.
 * The filesystem is currently read-only. Implementing `mkdir` to create groups, `ln` or `touch` to create projects, etc. would be nice.
 * Code need some cleanup and could maybe be optimized here and there.

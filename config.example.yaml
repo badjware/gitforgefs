@@ -52,14 +52,8 @@ git:
   # The depth of the git history to pull. Set to 0 to pull the full history.
   depth: 1
 
-  # The number of `git clone` operation that can be queued up
-  clone_queue_size: 200
+  # The number of git operations that can be queued up
+  queue_size: 200
 
-  # The number of parallel `git clone` operation that is allowed to run at once
-  clone_worker_count: 5
-
-  # The number of `git pull` operation that can be queued up
-  pull_queue_size: 500
-
-  # The number of parallel `git pull` operation that is allowed to run at once
-  pull_worker_count: 5
+  # The number of parallel git operations that is allowed to run at once
+  worker_count: 5

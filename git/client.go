@@ -1,11 +1,15 @@
 package git
 
 import (
-	"errors"
+	"context"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
+
+	"github.com/vmihailenco/taskq/v3"
+	"github.com/vmihailenco/taskq/v3/memqueue"
 )
 
 const (
@@ -25,33 +29,41 @@ type GitClientParam struct {
 	PullDepth     int
 	AutoPull      bool
 
-	CloneBuffSize    int
-	CloneWorkerCount int
-	PullBuffSize     int
-	PullWorkerCount  int
+	QueueSize        int
+	QueueWorkerCount int
 }
 
 type gitClient struct {
 	GitClientParam
-	cloneChan chan *gitCloneParam
-	pullChan  chan *gitPullParam
+	queue     taskq.Queue
+	cloneTask *taskq.Task
+	pullTask  *taskq.Task
 }
 
 func NewClient(p GitClientParam) (*gitClient, error) {
+	queueFactory := memqueue.NewFactory()
 	// Create the client
 	c := &gitClient{
 		GitClientParam: p,
-		cloneChan:      make(chan *gitCloneParam, p.CloneBuffSize),
-		pullChan:       make(chan *gitPullParam, p.PullBuffSize),
+
+		queue: queueFactory.RegisterQueue(&taskq.QueueOptions{
+			Name:         "git-queue",
+			MaxNumWorker: int32(p.QueueWorkerCount),
+			BufferSize:   p.QueueSize,
+			Storage:      taskq.NewLocalStorage(),
+		}),
 	}
 
-	// Start worker goroutines
-	for i := 0; i < p.CloneWorkerCount; i++ {
-		go c.cloneWorker()
-	}
-	for i := 0; i < p.PullWorkerCount; i++ {
-		go c.pullWorker()
-	}
+	c.cloneTask = taskq.RegisterTask(&taskq.TaskOptions{
+		Name:       "git-clone",
+		Handler:    c.clone,
+		RetryLimit: 1,
+	})
+	c.pullTask = taskq.RegisterTask(&taskq.TaskOptions{
+		Name:       "git-pull",
+		Handler:    c.pull,
+		RetryLimit: 1,
+	})
 
 	return c, nil
 }
@@ -62,28 +74,16 @@ func (c *gitClient) getLocalRepoLoc(pid int) string {
 
 func (c *gitClient) CloneOrPull(url string, pid int, defaultBranch string) (localRepoLoc string, err error) {
 	localRepoLoc = c.getLocalRepoLoc(pid)
-	// TODO: Better manage concurrency, filter out duplicate requests
 	if _, err := os.Stat(localRepoLoc); os.IsNotExist(err) {
-		// Dispatch to clone worker
-		select {
-		case c.cloneChan <- &gitCloneParam{
-			url:           url,
-			defaultBranch: defaultBranch,
-			dst:           localRepoLoc,
-		}:
-		default:
-			return localRepoLoc, errors.New("failed to clone local repo")
-		}
+		// Dispatch clone msg
+		msg := c.cloneTask.WithArgs(context.Background(), url, defaultBranch, localRepoLoc)
+		msg.OnceInPeriod(time.Second, pid)
+		c.queue.Add(msg)
 	} else if c.AutoPull {
-		// Dispatch to pull worker
-		select {
-		case c.pullChan <- &gitPullParam{
-			repoPath:      localRepoLoc,
-			defaultBranch: defaultBranch,
-		}:
-		default:
-			return localRepoLoc, errors.New("failed to pull local repo")
-		}
+		// Dispatch pull msg
+		msg := c.pullTask.WithArgs(context.Background(), localRepoLoc, defaultBranch)
+		msg.OnceInPeriod(time.Second, pid)
+		c.queue.Add(msg)
 	}
 	return localRepoLoc, nil
 }
