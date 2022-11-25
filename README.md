@@ -55,7 +55,7 @@ $ tree -L 4
 
 Install [go](https://golang.org/) and run
 ``` sh
-go get github.com/badjware/gitlabfs
+go install github.com/badjware/gitlabfs@latest
 ```
 
 The executable will be in `$GOPATH/bin/gitlabfs` or `~/go/bin/gitlabfs` by default. For convenience, copy `gitlabfs` somewhere suitable or add `~/go/bin` in your `PATH`.
