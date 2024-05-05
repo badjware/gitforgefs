@@ -8,7 +8,7 @@ import (
 )
 
 func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
-	if c.CloneMethod == CloneInit {
+	if c.GitClientParam.OnClone == "init" {
 		// "Fake" cloning the repo by never actually talking to the git server
 		// This skip a fetch operation that we would do if we where to do a proper clone
 		// We can save a lot of time and network i/o doing it this way, at the cost of
@@ -32,8 +32,8 @@ func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
 			"git", "remote", "add",
 			"-m", defaultBranch,
 			"--",
-			c.RemoteName, // name
-			url,          // url
+			c.GitClientParam.Remote, // name
+			url,                     // url
 		)
 		if err != nil {
 			return fmt.Errorf("failed to setup remote %v in git repo %v: %v", url, dst, err)
@@ -45,7 +45,7 @@ func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
 			"git", "config", "--local",
 			"--",
 			fmt.Sprintf("branch.%s.remote", defaultBranch), // key
-			c.RemoteName, // value
+			c.GitClientParam.Remote,                        // value
 
 		)
 		if err != nil {
@@ -66,8 +66,8 @@ func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
 		// Clone the repo
 		_, err := utils.ExecProcess(
 			"git", "clone",
-			"--origin", c.RemoteName,
-			"--depth", strconv.Itoa(c.PullDepth),
+			"--origin", c.GitClientParam.Remote,
+			"--depth", strconv.Itoa(c.GitClientParam.Depth),
 			"--",
 			url, // repository
 			dst, // directory

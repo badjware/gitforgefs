@@ -2,39 +2,33 @@ package git
 
 import (
 	"context"
-	"net/url"
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"time"
 
+	"github.com/badjware/gitlabfs/fstree"
 	"github.com/vmihailenco/taskq/v3"
 	"github.com/vmihailenco/taskq/v3/memqueue"
 )
 
-const (
-	CloneInit  = iota
-	CloneClone = iota
-)
-
-type GitClonerPuller interface {
-	CloneOrPull(url string, pid int, defaultBranch string) (localRepoLoc string, err error)
-}
-
 type GitClientParam struct {
-	CloneLocation string
-	RemoteName    string
-	RemoteURL     *url.URL
-	CloneMethod   int
-	PullDepth     int
-	AutoPull      bool
-
-	QueueSize        int
-	QueueWorkerCount int
+	CloneLocation    string `yaml:"clone_location,omitempty"`
+	Remote           string `yaml:"remote,omitempty"`
+	OnClone          string `yaml:"on_clone,omitempty"`
+	AutoPull         bool   `yaml:"auto_pull,omitempty"`
+	Depth            int    `yaml:"depth,omitempty"`
+	QueueSize        int    `yaml:"queue_size,omitempty"`
+	QueueWorkerCount int    `yaml:"worker_count,omitempty"`
 }
 
 type gitClient struct {
 	GitClientParam
+
+	hostnameProg *regexp.Regexp
+
 	queue     taskq.Queue
 	cloneTask *taskq.Task
 	pullTask  *taskq.Task
@@ -45,6 +39,8 @@ func NewClient(p GitClientParam) (*gitClient, error) {
 	// Create the client
 	c := &gitClient{
 		GitClientParam: p,
+
+		hostnameProg: regexp.MustCompile(`([a-z0-1]+\.)+[a-z0-1]+`),
 
 		queue: queueFactory.RegisterQueue(&taskq.QueueOptions{
 			Name:         "git-queue",
@@ -68,21 +64,27 @@ func NewClient(p GitClientParam) (*gitClient, error) {
 	return c, nil
 }
 
-func (c *gitClient) getLocalRepoLoc(pid int) string {
-	return filepath.Join(c.CloneLocation, c.RemoteURL.Hostname(), strconv.Itoa(pid))
-}
+func (c *gitClient) FetchLocalRepositoryPath(source fstree.RepositorySource) (localRepoLoc string, err error) {
+	rid := source.GetRepositoryID()
+	cloneUrl := source.GetCloneURL()
+	defaultBranch := source.GetDefaultBranch()
 
-func (c *gitClient) CloneOrPull(url string, pid int, defaultBranch string) (localRepoLoc string, err error) {
-	localRepoLoc = c.getLocalRepoLoc(pid)
+	// Parse the url
+	hostname := c.hostnameProg.FindString(cloneUrl)
+	if hostname == "" {
+		return "", fmt.Errorf("failed to match a valid hostname from \"%v\"", cloneUrl)
+	}
+
+	localRepoLoc = filepath.Join(c.CloneLocation, hostname, strconv.Itoa(int(rid)))
 	if _, err := os.Stat(localRepoLoc); os.IsNotExist(err) {
 		// Dispatch clone msg
-		msg := c.cloneTask.WithArgs(context.Background(), url, defaultBranch, localRepoLoc)
-		msg.OnceInPeriod(time.Second, pid)
+		msg := c.cloneTask.WithArgs(context.Background(), cloneUrl, defaultBranch, localRepoLoc)
+		msg.OnceInPeriod(time.Second, rid)
 		c.queue.Add(msg)
 	} else if c.AutoPull {
 		// Dispatch pull msg
 		msg := c.pullTask.WithArgs(context.Background(), localRepoLoc, defaultBranch)
-		msg.OnceInPeriod(time.Second, pid)
+		msg.OnceInPeriod(time.Second, rid)
 		c.queue.Add(msg)
 	}
 	return localRepoLoc, nil

@@ -23,10 +23,10 @@ func (c *gitClient) pull(repoPath string, defaultBranch string) error {
 		_, err = utils.ExecProcessInDir(
 			repoPath, // workdir
 			"git", "pull",
-			"--depth", strconv.Itoa(c.PullDepth),
+			"--depth", strconv.Itoa(c.GitClientParam.Depth),
 			"--",
-			c.RemoteName,  // repository
-			defaultBranch, // refspec
+			c.GitClientParam.Remote, // repository
+			defaultBranch,           // refspec
 		)
 		if err != nil {
 			return fmt.Errorf("failed to pull git repo %v: %v", repoPath, err)
