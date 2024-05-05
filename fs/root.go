@@ -8,8 +8,6 @@ import (
 	"syscall"
 
 	"github.com/badjware/gitlabfs/git"
-	"github.com/badjware/gitlabfs/gitlab"
-
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
@@ -24,54 +22,24 @@ type staticNode interface {
 	Mode() uint32
 }
 
-type FSParam struct {
-	Git    git.GitClonerPuller
-	Gitlab gitlab.GitlabFetcher
+type GitPlatform interface {
+	FetchRootGroupContent() (map[string]GroupSource, error)
+	FetchGroupContent(gid uint64) (map[string]GroupSource, map[string]RepositorySource, error)
+}
 
-	RootGroupIds []int
-	UserIds      []int
+type FSParam struct {
+	GitImplementation git.GitClonerPuller
+	GitPlatform       GitPlatform
 
 	staticInoChan chan uint64
 }
 
 type rootNode struct {
 	fs.Inode
-	param        *FSParam
-	rootGroupIds []int
-	userIds      []int
+	param *FSParam
 }
 
 var _ = (fs.NodeOnAdder)((*rootNode)(nil))
-
-func (n *rootNode) OnAdd(ctx context.Context) {
-	groupsInode := n.NewPersistentInode(
-		ctx,
-		newGroupsNode(
-			n.rootGroupIds,
-			n.param,
-		),
-		fs.StableAttr{
-			Ino:  <-n.param.staticInoChan,
-			Mode: fuse.S_IFDIR,
-		},
-	)
-	n.AddChild("groups", groupsInode, false)
-
-	usersInode := n.NewPersistentInode(
-		ctx,
-		newUsersNode(
-			n.userIds,
-			n.param,
-		),
-		fs.StableAttr{
-			Ino:  <-n.param.staticInoChan,
-			Mode: fuse.S_IFDIR,
-		},
-	)
-	n.AddChild("users", usersInode, false)
-
-	fmt.Println("Mounted and ready to use")
-}
 
 func Start(mountpoint string, mountoptions []string, param *FSParam, debug bool) error {
 	fmt.Printf("Mounting in %v\n", mountpoint)
@@ -82,9 +50,7 @@ func Start(mountpoint string, mountoptions []string, param *FSParam, debug bool)
 
 	param.staticInoChan = make(chan uint64)
 	root := &rootNode{
-		param:        param,
-		rootGroupIds: param.RootGroupIds,
-		userIds:      param.UserIds,
+		param: param,
 	}
 
 	go staticInoGenerator(root.param.staticInoChan)
@@ -102,6 +68,28 @@ func Start(mountpoint string, mountoptions []string, param *FSParam, debug bool)
 	server.Wait()
 
 	return nil
+}
+
+func (n *rootNode) OnAdd(ctx context.Context) {
+	rootGroups, err := n.param.GitPlatform.FetchRootGroupContent()
+	if err != nil {
+		panic(err)
+	}
+
+	for groupName, group := range rootGroups {
+		groupNode, _ := newGroupNodeFromSource(group, n.param)
+		persistentInode := n.NewPersistentInode(
+			ctx,
+			groupNode,
+			fs.StableAttr{
+				Ino:  <-n.param.staticInoChan,
+				Mode: fuse.S_IFDIR,
+			},
+		)
+		n.AddChild(groupName, persistentInode, false)
+	}
+
+	fmt.Println("Mounted and ready to use")
 }
 
 func staticInoGenerator(staticInoChan chan<- uint64) {

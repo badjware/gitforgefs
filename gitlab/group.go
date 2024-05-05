@@ -4,111 +4,118 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/badjware/gitlabfs/fs"
 	"github.com/xanzy/go-gitlab"
 )
-
-type GroupFetcher interface {
-	FetchGroup(gid int) (*Group, error)
-	FetchGroupContent(group *Group) (*GroupContent, error)
-}
-
-type GroupContent struct {
-	Groups   map[string]*Group
-	Projects map[string]*Project
-}
 
 type Group struct {
 	ID   int
 	Name string
 
-	mux     sync.Mutex
-	content *GroupContent
+	mux sync.Mutex
+
+	// group content cache
+	groupCache   map[string]fs.GroupSource
+	projectCache map[string]fs.RepositorySource
 }
 
-func NewGroupFromGitlabGroup(group *gitlab.Group) Group {
-	// https://godoc.org/github.com/xanzy/go-gitlab#Group
-	return Group{
-		ID:   group.ID,
-		Name: group.Path,
-	}
+func (g *Group) GetGroupID() uint64 {
+	return uint64(g.ID)
 }
 
 func (g *Group) InvalidateCache() {
 	g.mux.Lock()
 	defer g.mux.Unlock()
 
-	g.content = nil
+	g.groupCache = nil
+	g.projectCache = nil
 }
 
-func (c *gitlabClient) FetchGroup(gid int) (*Group, error) {
+func (c *gitlabClient) fetchGroup(gid int) (*Group, error) {
+	// start by searching the cache
+	// TODO: cache invalidation?
+	group, found := c.groupCache[gid]
+	if found {
+		return group, nil
+	}
+
+	// If not in cache, fetch group infos from API
 	gitlabGroup, _, err := c.client.Groups.GetGroup(gid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch group with id %v: %v", gid, err)
 	}
-	group := NewGroupFromGitlabGroup(gitlabGroup)
-	return &group, nil
+	newGroup := Group{
+		ID:   gitlabGroup.ID,
+		Name: gitlabGroup.Path,
+
+		groupCache:   nil,
+		projectCache: nil,
+	}
+
+	// save in cache
+	c.groupCache[gid] = &newGroup
+
+	return &newGroup, nil
 }
 
-func (c *gitlabClient) FetchGroupContent(group *Group) (*GroupContent, error) {
+func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fs.GroupSource, map[string]fs.RepositorySource, error) {
 	group.mux.Lock()
 	defer group.mux.Unlock()
 
 	// Get cached data if available
-	if group.content != nil {
-		return group.content, nil
-	}
+	// TODO: cache cache invalidation?
+	if group.groupCache == nil || group.projectCache == nil {
+		groupCache := make(map[string]fs.GroupSource)
+		projectCache := make(map[string]fs.RepositorySource)
 
-	content := &GroupContent{
-		Groups:   map[string]*Group{},
-		Projects: map[string]*Project{},
-	}
+		// List subgroups in path
+		ListGroupsOpt := &gitlab.ListSubgroupsOptions{
+			ListOptions: gitlab.ListOptions{
+				Page:    1,
+				PerPage: 100,
+			},
+			AllAvailable: gitlab.Bool(true),
+		}
+		for {
+			gitlabGroups, response, err := c.client.Groups.ListSubgroups(group.ID, ListGroupsOpt)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to fetch groups in gitlab: %v", err)
+			}
+			for _, gitlabGroup := range gitlabGroups {
+				group, _ := c.fetchGroup(gitlabGroup.ID)
+				groupCache[group.Name] = group
+			}
+			if response.CurrentPage >= response.TotalPages {
+				break
+			}
+			// Get the next page
+			ListGroupsOpt.Page = response.NextPage
+		}
 
-	// List subgroups in path
-	ListGroupsOpt := &gitlab.ListSubgroupsOptions{
-		ListOptions: gitlab.ListOptions{
-			Page:    1,
-			PerPage: 100,
-		},
-		AllAvailable: gitlab.Bool(true),
-	}
-	for {
-		gitlabGroups, response, err := c.client.Groups.ListSubgroups(group.ID, ListGroupsOpt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch groups in gitlab: %v", err)
+		// List projects in path
+		listProjectOpt := &gitlab.ListGroupProjectsOptions{
+			ListOptions: gitlab.ListOptions{
+				Page:    1,
+				PerPage: 100,
+			}}
+		for {
+			gitlabProjects, response, err := c.client.Groups.ListGroupProjects(group.ID, listProjectOpt)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
+			}
+			for _, gitlabProject := range gitlabProjects {
+				project := c.newProjectFromGitlabProject(gitlabProject)
+				projectCache[project.Name] = &project
+			}
+			if response.CurrentPage >= response.TotalPages {
+				break
+			}
+			// Get the next page
+			listProjectOpt.Page = response.NextPage
 		}
-		for _, gitlabGroup := range gitlabGroups {
-			group := NewGroupFromGitlabGroup(gitlabGroup)
-			content.Groups[group.Name] = &group
-		}
-		if response.CurrentPage >= response.TotalPages {
-			break
-		}
-		// Get the next page
-		ListGroupsOpt.Page = response.NextPage
-	}
 
-	// List projects in path
-	listProjectOpt := &gitlab.ListGroupProjectsOptions{
-		ListOptions: gitlab.ListOptions{
-			Page:    1,
-			PerPage: 100,
-		}}
-	for {
-		gitlabProjects, response, err := c.client.Groups.ListGroupProjects(group.ID, listProjectOpt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
-		}
-		for _, gitlabProject := range gitlabProjects {
-			project := c.newProjectFromGitlabProject(gitlabProject)
-			content.Projects[project.Name] = &project
-		}
-		if response.CurrentPage >= response.TotalPages {
-			break
-		}
-		// Get the next page
-		listProjectOpt.Page = response.NextPage
+		group.groupCache = groupCache
+		group.projectCache = projectCache
 	}
-
-	group.content = content
-	return content, nil
+	return group.groupCache, group.projectCache, nil
 }

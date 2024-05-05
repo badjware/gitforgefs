@@ -16,25 +16,17 @@ import (
 
 type (
 	Config struct {
-		FS     FSConfig     `yaml:"fs,omitempty"`
-		Gitlab GitlabConfig `yaml:"gitlab,omitempty"`
-		Git    GitConfig    `yaml:"git,omitempty"`
+		FS     FSConfig                  `yaml:"fs,omitempty"`
+		Gitlab gitlab.GitlabClientConfig `yaml:"gitlab,omitempty"`
+		Git    GitConfig                 `yaml:"git,omitempty"`
 	}
 	FSConfig struct {
 		Mountpoint   string `yaml:"mountpoint,omitempty"`
 		MountOptions string `yaml:"mountoptions,omitempty"`
 	}
-	GitlabConfig struct {
-		URL                string `yaml:"url,omitempty"`
-		Token              string `yaml:"token,omitempty"`
-		GroupIDs           []int  `yaml:"group_ids,omitempty"`
-		UserIDs            []int  `yaml:"user_ids,omitempty"`
-		IncludeCurrentUser bool   `yaml:"include_current_user,omitempty"`
-	}
 	GitConfig struct {
 		CloneLocation    string `yaml:"clone_location,omitempty"`
 		Remote           string `yaml:"remote,omitempty"`
-		PullMethod       string `yaml:"pull_method,omitempty"`
 		OnClone          string `yaml:"on_clone,omitempty"`
 		AutoPull         bool   `yaml:"auto_pull,omitempty"`
 		Depth            int    `yaml:"depth,omitempty"`
@@ -56,17 +48,17 @@ func loadConfig(configPath string) (*Config, error) {
 			Mountpoint:   "",
 			MountOptions: "nodev,nosuid",
 		},
-		Gitlab: GitlabConfig{
+		Gitlab: gitlab.GitlabClientConfig{
 			URL:                "https://gitlab.com",
 			Token:              "",
 			GroupIDs:           []int{9970},
 			UserIDs:            []int{},
 			IncludeCurrentUser: true,
+			PullMethod:         "http",
 		},
 		Git: GitConfig{
 			CloneLocation:    defaultCloneLocation,
 			Remote:           "origin",
-			PullMethod:       "http",
 			OnClone:          "init",
 			AutoPull:         false,
 			Depth:            0,
@@ -91,16 +83,13 @@ func loadConfig(configPath string) (*Config, error) {
 	return config, nil
 }
 
-func makeGitlabConfig(config *Config) (*gitlab.GitlabClientParam, error) {
+func makeGitlabConfig(config *Config) (*gitlab.GitlabClientConfig, error) {
 	// parse pull_method
-	if config.Git.PullMethod != gitlab.PullMethodHTTP && config.Git.PullMethod != gitlab.PullMethodSSH {
+	if config.Gitlab.PullMethod != gitlab.PullMethodHTTP && config.Gitlab.PullMethod != gitlab.PullMethodSSH {
 		return nil, fmt.Errorf("pull_method must be either \"%v\" or \"%v\"", gitlab.PullMethodHTTP, gitlab.PullMethodSSH)
 	}
 
-	return &gitlab.GitlabClientParam{
-		PullMethod:         config.Git.PullMethod,
-		IncludeCurrentUser: config.Gitlab.IncludeCurrentUser && config.Gitlab.Token != "",
-	}, nil
+	return &config.Gitlab, nil
 }
 
 func makeGitConfig(config *Config) (*git.GitClientParam, error) {
@@ -181,18 +170,18 @@ func main() {
 	gitClient, _ := git.NewClient(*gitClientParam)
 
 	// Create the gitlab client
-	gitlabClientParam, err := makeGitlabConfig(config)
+	GitlabClientConfig, err := makeGitlabConfig(config)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	gitlabClient, _ := gitlab.NewClient(config.Gitlab.URL, config.Gitlab.Token, *gitlabClientParam)
+	gitlabClient, _ := gitlab.NewClient(config.Gitlab.URL, config.Gitlab.Token, *GitlabClientConfig)
 
 	// Start the filesystem
 	err = fs.Start(
 		mountpoint,
 		parsedMountoptions,
-		&fs.FSParam{Git: gitClient, Gitlab: gitlabClient, RootGroupIds: config.Gitlab.GroupIDs, UserIds: config.Gitlab.UserIDs},
+		&fs.FSParam{GitImplementation: gitClient, GitPlatform: gitlabClient},
 		*debug,
 	)
 	if err != nil {

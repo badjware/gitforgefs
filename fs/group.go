@@ -2,9 +2,9 @@ package fs
 
 import (
 	"context"
+	"fmt"
 	"syscall"
 
-	"github.com/badjware/gitlabfs/gitlab"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
@@ -13,8 +13,13 @@ type groupNode struct {
 	fs.Inode
 	param *FSParam
 
-	group       *gitlab.Group
+	source      GroupSource
 	staticNodes map[string]staticNode
+}
+
+type GroupSource interface {
+	GetGroupID() uint64
+	InvalidateCache()
 }
 
 // Ensure we are implementing the NodeReaddirer interface
@@ -23,46 +28,35 @@ var _ = (fs.NodeReaddirer)((*groupNode)(nil))
 // Ensure we are implementing the NodeLookuper interface
 var _ = (fs.NodeLookuper)((*groupNode)(nil))
 
-func newGroupNodeByID(gid int, param *FSParam) (*groupNode, error) {
-	group, err := param.Gitlab.FetchGroup(gid)
-	if err != nil {
-		return nil, err
-	}
+func newGroupNodeFromSource(source GroupSource, param *FSParam) (*groupNode, error) {
 	node := &groupNode{
-		param: param,
-		group: group,
+		param:  param,
+		source: source,
 		staticNodes: map[string]staticNode{
-			".refresh": newRefreshNode(group, param),
-		},
-	}
-	return node, nil
-}
-
-func newGroupNode(group *gitlab.Group, param *FSParam) (*groupNode, error) {
-	node := &groupNode{
-		param: param,
-		group: group,
-		staticNodes: map[string]staticNode{
-			".refresh": newRefreshNode(group, param),
+			".refresh": newRefreshNode(source, param),
 		},
 	}
 	return node, nil
 }
 
 func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
-	groupContent, _ := n.param.Gitlab.FetchGroupContent(n.group)
-	entries := make([]fuse.DirEntry, 0, len(groupContent.Groups)+len(groupContent.Projects)+len(n.staticNodes))
-	for _, group := range groupContent.Groups {
+	groups, repositories, err := n.param.GitPlatform.FetchGroupContent(n.source.GetGroupID())
+	if err != nil {
+		fmt.Errorf("%v", err)
+	}
+
+	entries := make([]fuse.DirEntry, 0, len(groups)+len(repositories)+len(n.staticNodes))
+	for groupName, group := range groups {
 		entries = append(entries, fuse.DirEntry{
-			Name: group.Name,
-			Ino:  uint64(group.ID),
+			Name: groupName,
+			Ino:  group.GetGroupID(),
 			Mode: fuse.S_IFDIR,
 		})
 	}
-	for _, project := range groupContent.Projects {
+	for repositoryName, repository := range repositories {
 		entries = append(entries, fuse.DirEntry{
-			Name: project.Name,
-			Ino:  uint64(project.ID),
+			Name: repositoryName,
+			Ino:  repository.GetRepositoryID(),
 			Mode: fuse.S_IFLNK,
 		})
 	}
@@ -77,27 +71,27 @@ func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 }
 
 func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	groupContent, _ := n.param.Gitlab.FetchGroupContent(n.group)
+	groups, repositories, _ := n.param.GitPlatform.FetchGroupContent(n.source.GetGroupID())
 
 	// Check if the map of groups contains it
-	group, ok := groupContent.Groups[name]
-	if ok {
+	group, found := groups[name]
+	if found {
 		attrs := fs.StableAttr{
-			Ino:  uint64(group.ID),
+			Ino:  group.GetGroupID(),
 			Mode: fuse.S_IFDIR,
 		}
-		groupNode, _ := newGroupNode(group, n.param)
+		groupNode, _ := newGroupNodeFromSource(group, n.param)
 		return n.NewInode(ctx, groupNode, attrs), 0
 	}
 
 	// Check if the map of projects contains it
-	project, ok := groupContent.Projects[name]
-	if ok {
+	repository, found := repositories[name]
+	if found {
 		attrs := fs.StableAttr{
-			Ino:  uint64(project.ID),
+			Ino:  repository.GetRepositoryID(),
 			Mode: fuse.S_IFLNK,
 		}
-		repositoryNode, _ := newRepositoryNode(project, n.param)
+		repositoryNode, _ := newRepositoryNodeFromSource(repository, n.param)
 		return n.NewInode(ctx, repositoryNode, attrs), 0
 	}
 
