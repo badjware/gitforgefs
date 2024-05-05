@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/badjware/gitlabfs/git"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
@@ -22,14 +21,18 @@ type staticNode interface {
 	Mode() uint32
 }
 
+type GitClient interface {
+	FetchLocalRepositoryPath(source RepositorySource) (string, error)
+}
+
 type GitPlatform interface {
 	FetchRootGroupContent() (map[string]GroupSource, error)
 	FetchGroupContent(gid uint64) (map[string]GroupSource, map[string]RepositorySource, error)
 }
 
 type FSParam struct {
-	GitImplementation git.GitClonerPuller
-	GitPlatform       GitPlatform
+	GitClient   GitClient
+	GitPlatform GitPlatform
 
 	staticInoChan chan uint64
 }

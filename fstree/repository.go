@@ -2,6 +2,7 @@ package fstree
 
 import (
 	"context"
+	"fmt"
 	"syscall"
 
 	"github.com/hanwen/go-fuse/v2/fs"
@@ -37,7 +38,9 @@ func newRepositoryNodeFromSource(source RepositorySource, param *FSParam) (*repo
 func (n *repositoryNode) Readlink(ctx context.Context) ([]byte, syscall.Errno) {
 	// Create the local copy of the repo
 	// TODO: cleanup
-	localRepositoryPath, _ := n.param.GitImplementation.CloneOrPull(n.source.GetCloneURL(), int(n.source.GetRepositoryID()), n.source.GetDefaultBranch())
-
+	localRepositoryPath, err := n.param.GitClient.FetchLocalRepositoryPath(n.source)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return []byte(localRepositoryPath), 0
 }

@@ -42,7 +42,7 @@ func newGroupNodeFromSource(source GroupSource, param *FSParam) (*groupNode, err
 func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 	groups, repositories, err := n.param.GitPlatform.FetchGroupContent(n.source.GetGroupID())
 	if err != nil {
-		fmt.Errorf("%v", err)
+		fmt.Println(err)
 	}
 
 	entries := make([]fuse.DirEntry, 0, len(groups)+len(repositories)+len(n.staticNodes))

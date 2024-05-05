@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,20 +17,11 @@ type (
 	Config struct {
 		FS     FSConfig                  `yaml:"fs,omitempty"`
 		Gitlab gitlab.GitlabClientConfig `yaml:"gitlab,omitempty"`
-		Git    GitConfig                 `yaml:"git,omitempty"`
+		Git    git.GitClientParam        `yaml:"git,omitempty"`
 	}
 	FSConfig struct {
 		Mountpoint   string `yaml:"mountpoint,omitempty"`
 		MountOptions string `yaml:"mountoptions,omitempty"`
-	}
-	GitConfig struct {
-		CloneLocation    string `yaml:"clone_location,omitempty"`
-		Remote           string `yaml:"remote,omitempty"`
-		OnClone          string `yaml:"on_clone,omitempty"`
-		AutoPull         bool   `yaml:"auto_pull,omitempty"`
-		Depth            int    `yaml:"depth,omitempty"`
-		QueueSize        int    `yaml:"queue_size,omitempty"`
-		QueueWorkerCount int    `yaml:"worker_count,omitempty"`
 	}
 )
 
@@ -56,7 +46,7 @@ func loadConfig(configPath string) (*Config, error) {
 			IncludeCurrentUser: true,
 			PullMethod:         "http",
 		},
-		Git: GitConfig{
+		Git: git.GitClientParam{
 			CloneLocation:    defaultCloneLocation,
 			Remote:           "origin",
 			OnClone:          "init",
@@ -93,32 +83,12 @@ func makeGitlabConfig(config *Config) (*gitlab.GitlabClientConfig, error) {
 }
 
 func makeGitConfig(config *Config) (*git.GitClientParam, error) {
-	// Parse the gilab url
-	parsedGitlabURL, err := url.Parse(config.Gitlab.URL)
-	if err != nil {
-		return nil, err
-	}
-
 	// parse on_clone
-	cloneMethod := 0
-	if config.Git.OnClone == "init" {
-		cloneMethod = git.CloneInit
-	} else if config.Git.OnClone == "clone" {
-		cloneMethod = git.CloneClone
-	} else {
+	if config.Git.OnClone != "init" && config.Git.OnClone != "clone" {
 		return nil, fmt.Errorf("on_clone must be either \"init\" or \"clone\"")
 	}
 
-	return &git.GitClientParam{
-		CloneLocation:    config.Git.CloneLocation,
-		RemoteName:       config.Git.Remote,
-		RemoteURL:        parsedGitlabURL,
-		CloneMethod:      cloneMethod,
-		AutoPull:         config.Git.AutoPull,
-		PullDepth:        config.Git.Depth,
-		QueueSize:        config.Git.QueueSize,
-		QueueWorkerCount: config.Git.QueueWorkerCount,
-	}, nil
+	return &config.Git, nil
 }
 
 func main() {
@@ -181,7 +151,7 @@ func main() {
 	err = fstree.Start(
 		mountpoint,
 		parsedMountoptions,
-		&fstree.FSParam{GitImplementation: gitClient, GitPlatform: gitlabClient},
+		&fstree.FSParam{GitClient: gitClient, GitPlatform: gitlabClient},
 		*debug,
 	)
 	if err != nil {
