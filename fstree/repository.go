@@ -1,4 +1,4 @@
-package fs
+package fstree
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/hanwen/go-fuse/v2/fs"
 )
 
-type RepositoryNode struct {
+type repositoryNode struct {
 	fs.Inode
 	param *FSParam
 
@@ -22,10 +22,10 @@ type RepositorySource interface {
 }
 
 // Ensure we are implementing the NodeReaddirer interface
-var _ = (fs.NodeReadlinker)((*RepositoryNode)(nil))
+var _ = (fs.NodeReadlinker)((*repositoryNode)(nil))
 
-func newRepositoryNodeFromSource(source RepositorySource, param *FSParam) (*RepositoryNode, error) {
-	node := &RepositoryNode{
+func newRepositoryNodeFromSource(source RepositorySource, param *FSParam) (*repositoryNode, error) {
+	node := &repositoryNode{
 		param:  param,
 		source: source,
 	}
@@ -34,7 +34,7 @@ func newRepositoryNodeFromSource(source RepositorySource, param *FSParam) (*Repo
 	return node, nil
 }
 
-func (n *RepositoryNode) Readlink(ctx context.Context) ([]byte, syscall.Errno) {
+func (n *repositoryNode) Readlink(ctx context.Context) ([]byte, syscall.Errno) {
 	// Create the local copy of the repo
 	// TODO: cleanup
 	localRepositoryPath, _ := n.param.GitImplementation.CloneOrPull(n.source.GetCloneURL(), int(n.source.GetRepositoryID()), n.source.GetDefaultBranch())

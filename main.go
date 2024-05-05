@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/badjware/gitlabfs/fs"
+	"github.com/badjware/gitlabfs/fstree"
 	"github.com/badjware/gitlabfs/git"
 	"github.com/badjware/gitlabfs/gitlab"
 	"gopkg.in/yaml.v2"
@@ -178,10 +178,10 @@ func main() {
 	gitlabClient, _ := gitlab.NewClient(config.Gitlab.URL, config.Gitlab.Token, *GitlabClientConfig)
 
 	// Start the filesystem
-	err = fs.Start(
+	err = fstree.Start(
 		mountpoint,
 		parsedMountoptions,
-		&fs.FSParam{GitImplementation: gitClient, GitPlatform: gitlabClient},
+		&fstree.FSParam{GitImplementation: gitClient, GitPlatform: gitlabClient},
 		*debug,
 	)
 	if err != nil {

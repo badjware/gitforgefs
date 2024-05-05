@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/badjware/gitlabfs/fs"
+	"github.com/badjware/gitlabfs/fstree"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -15,8 +15,8 @@ type Group struct {
 	mux sync.Mutex
 
 	// group content cache
-	groupCache   map[string]fs.GroupSource
-	projectCache map[string]fs.RepositorySource
+	groupCache   map[string]fstree.GroupSource
+	projectCache map[string]fstree.RepositorySource
 }
 
 func (g *Group) GetGroupID() uint64 {
@@ -58,15 +58,15 @@ func (c *gitlabClient) fetchGroup(gid int) (*Group, error) {
 	return &newGroup, nil
 }
 
-func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fs.GroupSource, map[string]fs.RepositorySource, error) {
+func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	group.mux.Lock()
 	defer group.mux.Unlock()
 
 	// Get cached data if available
 	// TODO: cache cache invalidation?
 	if group.groupCache == nil || group.projectCache == nil {
-		groupCache := make(map[string]fs.GroupSource)
-		projectCache := make(map[string]fs.RepositorySource)
+		groupCache := make(map[string]fstree.GroupSource)
+		projectCache := make(map[string]fstree.RepositorySource)
 
 		// List subgroups in path
 		ListGroupsOpt := &gitlab.ListSubgroupsOptions{
