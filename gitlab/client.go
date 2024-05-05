@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/badjware/gitlabfs/fs"
+	"github.com/badjware/gitlabfs/fstree"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -27,7 +27,7 @@ type gitlabClient struct {
 	client *gitlab.Client
 
 	// root group cache
-	rootGroupCache   map[string]fs.GroupSource
+	rootGroupCache   map[string]fstree.GroupSource
 	currentUserCache *User
 
 	// API response cache
@@ -57,10 +57,10 @@ func NewClient(gitlabUrl string, gitlabToken string, p GitlabClientConfig) (*git
 	return gitlabClient, nil
 }
 
-func (c *gitlabClient) FetchRootGroupContent() (map[string]fs.GroupSource, error) {
+func (c *gitlabClient) FetchRootGroupContent() (map[string]fstree.GroupSource, error) {
 	// use cached values if available
 	if c.rootGroupCache == nil {
-		rootGroupCache := make(map[string]fs.GroupSource)
+		rootGroupCache := make(map[string]fstree.GroupSource)
 
 		// fetch root groups
 		for _, gid := range c.GroupIDs {
@@ -92,7 +92,7 @@ func (c *gitlabClient) FetchRootGroupContent() (map[string]fs.GroupSource, error
 	return c.rootGroupCache, nil
 }
 
-func (c *gitlabClient) FetchGroupContent(gid uint64) (map[string]fs.GroupSource, map[string]fs.RepositorySource, error) {
+func (c *gitlabClient) FetchGroupContent(gid uint64) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	if slices.Contains[[]int, int](c.UserIDs, int(gid)) || (c.currentUserCache != nil && c.currentUserCache.ID == int(gid)) {
 		// gid is a user
 		user, err := c.fetchUser(int(gid))

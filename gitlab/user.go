@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/badjware/gitlabfs/fs"
+	"github.com/badjware/gitlabfs/fstree"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -15,7 +15,7 @@ type User struct {
 	mux sync.Mutex
 
 	// user content cache
-	projectCache map[string]fs.RepositorySource
+	projectCache map[string]fstree.RepositorySource
 }
 
 func (u *User) GetGroupID() uint64 {
@@ -72,14 +72,14 @@ func (c *gitlabClient) fetchCurrentUser() (*User, error) {
 	return c.currentUserCache, nil
 }
 
-func (c *gitlabClient) fetchUserContent(user *User) (map[string]fs.GroupSource, map[string]fs.RepositorySource, error) {
+func (c *gitlabClient) fetchUserContent(user *User) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	user.mux.Lock()
 	defer user.mux.Unlock()
 
 	// Get cached data if available
 	// TODO: cache cache invalidation?
 	if user.projectCache == nil {
-		projectCache := make(map[string]fs.RepositorySource)
+		projectCache := make(map[string]fstree.RepositorySource)
 
 		// Fetch the user repositories
 		listProjectOpt := &gitlab.ListProjectsOptions{
@@ -105,5 +105,5 @@ func (c *gitlabClient) fetchUserContent(user *User) (map[string]fs.GroupSource, 
 
 		user.projectCache = projectCache
 	}
-	return make(map[string]fs.GroupSource), user.projectCache, nil
+	return make(map[string]fstree.GroupSource), user.projectCache, nil
 }
