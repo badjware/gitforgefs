@@ -4,15 +4,15 @@ import (
 	"context"
 	"syscall"
 
-	"github.com/badjware/gitlabfs/gitlab"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
 type refreshNode struct {
 	fs.Inode
-	ino       uint64
-	refresher gitlab.Refresher
+	ino uint64
+
+	source GroupSource
 }
 
 // Ensure we are implementing the NodeSetattrer interface
@@ -21,10 +21,10 @@ var _ = (fs.NodeSetattrer)((*refreshNode)(nil))
 // Ensure we are implementing the NodeOpener interface
 var _ = (fs.NodeOpener)((*refreshNode)(nil))
 
-func newRefreshNode(refresher gitlab.Refresher, param *FSParam) *refreshNode {
+func newRefreshNode(source GroupSource, param *FSParam) *refreshNode {
 	return &refreshNode{
-		ino:       <-param.staticInoChan,
-		refresher: refresher,
+		ino:    <-param.staticInoChan,
+		source: source,
 	}
 }
 
@@ -41,6 +41,6 @@ func (n *refreshNode) Setattr(ctx context.Context, fh fs.FileHandle, in *fuse.Se
 }
 
 func (n *refreshNode) Open(ctx context.Context, flags uint32) (fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
-	n.refresher.InvalidateCache()
+	n.source.InvalidateCache()
 	return nil, 0, 0
 }
