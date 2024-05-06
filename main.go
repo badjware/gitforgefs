@@ -9,7 +9,7 @@ import (
 
 	"github.com/badjware/gitlabfs/fstree"
 	"github.com/badjware/gitlabfs/git"
-	"github.com/badjware/gitlabfs/gitlab"
+	"github.com/badjware/gitlabfs/platforms/gitlab"
 	"gopkg.in/yaml.v2"
 )
 
