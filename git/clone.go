@@ -64,14 +64,20 @@ func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
 		}
 	} else {
 		// Clone the repo
-		_, err := utils.ExecProcess(
-			"git", "clone",
+		args := []string{
+			"clone",
 			"--origin", c.GitClientParam.Remote,
-			"--depth", strconv.Itoa(c.GitClientParam.Depth),
+		}
+		if c.GitClientParam.Depth != 0 {
+			args = append(args, "--depth", strconv.Itoa(c.GitClientParam.Depth))
+		}
+		args = append(args,
 			"--",
 			url, // repository
 			dst, // directory
 		)
+
+		_, err := utils.ExecProcess("git", args...)
 		if err != nil {
 			return fmt.Errorf("failed to clone git repo %v to %v: %v", url, dst, err)
 		}
