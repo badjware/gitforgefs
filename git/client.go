@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/badjware/gitlabfs/fstree"
+	"github.com/badjware/gitlabfs/utils"
 	"github.com/vmihailenco/taskq/v3"
 	"github.com/vmihailenco/taskq/v3/memqueue"
 )
@@ -28,6 +29,10 @@ type gitClient struct {
 	GitClientParam
 
 	hostnameProg *regexp.Regexp
+
+	majorVersion int
+	minorVersion int
+	patchVersion string
 
 	queue     taskq.Queue
 	cloneTask *taskq.Task
@@ -50,6 +55,25 @@ func NewClient(p GitClientParam) (*gitClient, error) {
 		}),
 	}
 
+	// Parse git version
+	gitVersionOutput, err := utils.ExecProcess("git", "--version")
+	if err != nil {
+		return nil, fmt.Errorf("failed to run \"git --version\": %v", err)
+	}
+	prog := regexp.MustCompile(`([0-9]+)\.([0-9]+)\.(.+)`)
+	gitVersionMatches := prog.FindStringSubmatch(gitVersionOutput)
+	c.majorVersion, err = strconv.Atoi(gitVersionMatches[1])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse git major version \"%v\": %v", gitVersionOutput, err)
+	}
+	c.minorVersion, err = strconv.Atoi(gitVersionMatches[2])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse git minor version \"%v\": %v", gitVersionOutput, err)
+	}
+	c.patchVersion = gitVersionMatches[3]
+	fmt.Printf("Detected git version: major = %v minor = %v patch = %v\n", c.majorVersion, c.minorVersion, c.patchVersion)
+
+	// Register tasks
 	c.cloneTask = taskq.RegisterTask(&taskq.TaskOptions{
 		Name:       "git-clone",
 		Handler:    c.clone,

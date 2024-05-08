@@ -16,12 +16,19 @@ func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
 
 		// Init the local repo
 		fmt.Printf("Initializing %v into %v\n", url, dst)
-		_, err := utils.ExecProcess(
-			"git", "init",
-			"--initial-branch", defaultBranch,
+		args := []string{
+			"init",
+		}
+		if c.majorVersion > 2 || c.majorVersion == 2 && c.minorVersion >= 28 {
+			args = append(args, "--initial-branch", defaultBranch)
+		} else {
+			fmt.Printf("Version of git is too old to support --initial-branch. Consider upgrading git to version >= 2.28.0")
+		}
+		args = append(args,
 			"--",
 			dst, // directory
 		)
+		_, err := utils.ExecProcess("git", args...)
 		if err != nil {
 			return fmt.Errorf("failed to init git repo %v to %v: %v", url, dst, err)
 		}
