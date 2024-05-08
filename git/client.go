@@ -45,7 +45,7 @@ func NewClient(p GitClientParam) (*gitClient, error) {
 	c := &gitClient{
 		GitClientParam: p,
 
-		hostnameProg: regexp.MustCompile(`([a-z0-1]+\.)+[a-z0-1]+`),
+		hostnameProg: regexp.MustCompile(`([a-z0-1:\-]+\.)+[a-z0-1:\-]+`),
 
 		queue: queueFactory.RegisterQueue(&taskq.QueueOptions{
 			Name:         "git-queue",
