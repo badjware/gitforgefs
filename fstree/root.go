@@ -3,6 +3,7 @@ package fstree
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -34,6 +35,7 @@ type FSParam struct {
 	GitClient   GitClient
 	GitPlatform GitPlatform
 
+	logger        *slog.Logger
 	staticInoChan chan uint64
 }
 
@@ -44,13 +46,14 @@ type rootNode struct {
 
 var _ = (fs.NodeOnAdder)((*rootNode)(nil))
 
-func Start(mountpoint string, mountoptions []string, param *FSParam, debug bool) error {
-	fmt.Printf("Mounting in %v\n", mountpoint)
+func Start(logger *slog.Logger, mountpoint string, mountoptions []string, param *FSParam, debug bool) error {
+	logger.Info("Mounting", "mountpoint", mountpoint)
 
 	opts := &fs.Options{}
 	opts.MountOptions.Options = mountoptions
 	opts.Debug = debug
 
+	param.logger = logger
 	param.staticInoChan = make(chan uint64)
 	root := &rootNode{
 		param: param,
@@ -64,7 +67,7 @@ func Start(mountpoint string, mountoptions []string, param *FSParam, debug bool)
 	}
 
 	signalChan := make(chan os.Signal)
-	go signalHandler(signalChan, server)
+	go signalHandler(logger, signalChan, server)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// server.Serve() is already called in fs.Mount() so we shouldn't call it ourself. We wait for the server to terminate.
@@ -92,7 +95,7 @@ func (n *rootNode) OnAdd(ctx context.Context) {
 		n.AddChild(groupName, persistentInode, false)
 	}
 
-	fmt.Println("Mounted and ready to use")
+	n.param.logger.Info("Mounted and ready to use")
 }
 
 func staticInoGenerator(staticInoChan chan<- uint64) {
@@ -103,18 +106,18 @@ func staticInoGenerator(staticInoChan chan<- uint64) {
 	}
 }
 
-func signalHandler(signalChan <-chan os.Signal, server *fuse.Server) {
+func signalHandler(logger *slog.Logger, signalChan <-chan os.Signal, server *fuse.Server) {
 	err := server.WaitMount()
 	if err != nil {
-		fmt.Printf("failed to start exit signal handler: %v\n", err)
+		logger.Error("failed to start exit signal handler", "error", err)
 		return
 	}
 	for {
 		s := <-signalChan
-		fmt.Printf("Caught %v: stopping\n", s)
+		logger.Info("Caught signal", "signal", s)
 		err := server.Unmount()
 		if err != nil {
-			fmt.Printf("Failed to unmount: %v\n", err)
+			logger.Error("Failed to unmount", "error", err)
 		}
 	}
 }

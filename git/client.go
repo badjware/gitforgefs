@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -28,6 +29,8 @@ type GitClientParam struct {
 type gitClient struct {
 	GitClientParam
 
+	logger *slog.Logger
+
 	hostnameProg *regexp.Regexp
 
 	majorVersion int
@@ -39,11 +42,13 @@ type gitClient struct {
 	pullTask  *taskq.Task
 }
 
-func NewClient(p GitClientParam) (*gitClient, error) {
+func NewClient(logger *slog.Logger, p GitClientParam) (*gitClient, error) {
 	queueFactory := memqueue.NewFactory()
 	// Create the client
 	c := &gitClient{
 		GitClientParam: p,
+
+		logger: logger,
 
 		hostnameProg: regexp.MustCompile(`([a-z0-1:\-]+\.)+[a-z0-1:\-]+`),
 
@@ -56,7 +61,7 @@ func NewClient(p GitClientParam) (*gitClient, error) {
 	}
 
 	// Parse git version
-	gitVersionOutput, err := utils.ExecProcess("git", "--version")
+	gitVersionOutput, err := utils.ExecProcess(logger, "git", "--version")
 	if err != nil {
 		return nil, fmt.Errorf("failed to run \"git --version\": %v", err)
 	}
@@ -71,7 +76,7 @@ func NewClient(p GitClientParam) (*gitClient, error) {
 		return nil, fmt.Errorf("failed to parse git minor version \"%v\": %v", gitVersionOutput, err)
 	}
 	c.patchVersion = gitVersionMatches[3]
-	fmt.Printf("Detected git version: major = %v minor = %v patch = %v\n", c.majorVersion, c.minorVersion, c.patchVersion)
+	logger.Info("Detected git version", "major", c.majorVersion, "minor", c.minorVersion, "patch", c.patchVersion)
 
 	// Register tasks
 	c.cloneTask = taskq.RegisterTask(&taskq.TaskOptions{

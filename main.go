@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,6 +111,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Get logger
+	logger := slog.Default()
+
 	// Configure mountpoint
 	mountpoint := config.FS.Mountpoint
 	if flag.NArg() == 1 {
@@ -137,7 +141,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	gitClient, _ := git.NewClient(*gitClientParam)
+	gitClient, _ := git.NewClient(logger, *gitClientParam)
 
 	// Create the gitlab client
 	GitlabClientConfig, err := makeGitlabConfig(config)
@@ -145,10 +149,11 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	gitlabClient, _ := gitlab.NewClient(config.Gitlab.URL, config.Gitlab.Token, *GitlabClientConfig)
+	gitlabClient, _ := gitlab.NewClient(logger, config.Gitlab.URL, config.Gitlab.Token, *GitlabClientConfig)
 
 	// Start the filesystem
 	err = fstree.Start(
+		logger,
 		mountpoint,
 		parsedMountoptions,
 		&fstree.FSParam{GitClient: gitClient, GitPlatform: gitlabClient},

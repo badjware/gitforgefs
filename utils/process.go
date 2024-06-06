@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"log/slog"
 	"os/exec"
 	"strings"
 )
@@ -11,19 +11,19 @@ const (
 	stderr = "stderr"
 )
 
-func ExecProcessInDir(workdir string, command string, args ...string) (string, error) {
+func ExecProcessInDir(logger *slog.Logger, workdir string, command string, args ...string) (string, error) {
 	cmd := exec.Command(command, args...)
 	if workdir != "" {
 		cmd.Dir = workdir
 	}
 
 	// Run the command
-	fmt.Printf("%v %v\n", command, strings.Join(args, " "))
+	logger.Debug("Running command", "cmd", command, "args", args)
 	output, err := cmd.Output()
 
 	return strings.TrimSpace(string(output)), err
 }
 
-func ExecProcess(command string, args ...string) (string, error) {
-	return ExecProcessInDir("", command, args...)
+func ExecProcess(logger *slog.Logger, command string, args ...string) (string, error) {
+	return ExecProcessInDir(logger, "", command, args...)
 }

@@ -2,7 +2,6 @@ package fstree
 
 import (
 	"context"
-	"fmt"
 	"syscall"
 
 	"github.com/hanwen/go-fuse/v2/fs"
@@ -42,7 +41,7 @@ func newGroupNodeFromSource(source GroupSource, param *FSParam) (*groupNode, err
 func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 	groups, repositories, err := n.param.GitPlatform.FetchGroupContent(n.source.GetGroupID())
 	if err != nil {
-		fmt.Println(err)
+		n.param.logger.Error(err.Error())
 	}
 
 	entries := make([]fuse.DirEntry, 0, len(groups)+len(repositories)+len(n.staticNodes))
