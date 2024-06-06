@@ -15,26 +15,27 @@ func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
 		// resulting in a very barebone local copy
 
 		// Init the local repo
-		fmt.Printf("Initializing %v into %v\n", url, dst)
+		c.logger.Info("Initializing git repository", "directory", dst, "repository", url)
 		args := []string{
 			"init",
 		}
 		if c.majorVersion > 2 || c.majorVersion == 2 && c.minorVersion >= 28 {
 			args = append(args, "--initial-branch", defaultBranch)
 		} else {
-			fmt.Printf("Version of git is too old to support --initial-branch. Consider upgrading git to version >= 2.28.0")
+			c.logger.Warn("Version of git is too old to support --initial-branch. Consider upgrading git to version >= 2.28.0")
 		}
 		args = append(args,
 			"--",
 			dst, // directory
 		)
-		_, err := utils.ExecProcess("git", args...)
+		_, err := utils.ExecProcess(c.logger, "git", args...)
 		if err != nil {
 			return fmt.Errorf("failed to init git repo %v to %v: %v", url, dst, err)
 		}
 
 		// Configure the remote
 		_, err = utils.ExecProcessInDir(
+			c.logger,
 			dst, // workdir
 			"git", "remote", "add",
 			"-m", defaultBranch,
@@ -48,6 +49,7 @@ func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
 
 		// Configure the default branch
 		_, err = utils.ExecProcessInDir(
+			c.logger,
 			dst, // workdir
 			"git", "config", "--local",
 			"--",
@@ -59,6 +61,7 @@ func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
 			return fmt.Errorf("failed to setup default branch remote in git repo %v: %v", dst, err)
 		}
 		_, err = utils.ExecProcessInDir(
+			c.logger,
 			dst, // workdir
 			"git", "config", "--local",
 			"--",
@@ -71,6 +74,7 @@ func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
 		}
 	} else {
 		// Clone the repo
+		c.logger.Info("Cloning git repository", "directory", dst, "repository", url)
 		args := []string{
 			"clone",
 			"--origin", c.GitClientParam.Remote,
@@ -84,7 +88,7 @@ func (c *gitClient) clone(url string, defaultBranch string, dst string) error {
 			dst, // directory
 		)
 
-		_, err := utils.ExecProcess("git", args...)
+		_, err := utils.ExecProcess(c.logger, "git", args...)
 		if err != nil {
 			return fmt.Errorf("failed to clone git repo %v to %v: %v", url, dst, err)
 		}

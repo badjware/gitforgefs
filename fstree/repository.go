@@ -2,7 +2,6 @@ package fstree
 
 import (
 	"context"
-	"fmt"
 	"syscall"
 
 	"github.com/hanwen/go-fuse/v2/fs"
@@ -40,7 +39,7 @@ func (n *repositoryNode) Readlink(ctx context.Context) ([]byte, syscall.Errno) {
 	// TODO: cleanup
 	localRepositoryPath, err := n.param.GitClient.FetchLocalRepositoryPath(n.source)
 	if err != nil {
-		fmt.Println(err)
+		n.param.logger.Error(err.Error())
 	}
 	return []byte(localRepositoryPath), 0
 }

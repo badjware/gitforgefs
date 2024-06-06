@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"fmt"
+	"log/slog"
 	"slices"
 
 	"github.com/badjware/gitlabfs/fstree"
@@ -26,6 +27,8 @@ type gitlabClient struct {
 	GitlabClientConfig
 	client *gitlab.Client
 
+	logger *slog.Logger
+
 	// root group cache
 	rootGroupCache   map[string]fstree.GroupSource
 	currentUserCache *User
@@ -35,7 +38,7 @@ type gitlabClient struct {
 	userCache  map[int]*User
 }
 
-func NewClient(gitlabUrl string, gitlabToken string, p GitlabClientConfig) (*gitlabClient, error) {
+func NewClient(logger *slog.Logger, gitlabUrl string, gitlabToken string, p GitlabClientConfig) (*gitlabClient, error) {
 	client, err := gitlab.NewClient(
 		gitlabToken,
 		gitlab.WithBaseURL(gitlabUrl),
@@ -47,6 +50,8 @@ func NewClient(gitlabUrl string, gitlabToken string, p GitlabClientConfig) (*git
 	gitlabClient := &gitlabClient{
 		GitlabClientConfig: p,
 		client:             client,
+
+		logger: logger,
 
 		rootGroupCache:   nil,
 		currentUserCache: nil,
@@ -82,9 +87,10 @@ func (c *gitlabClient) FetchRootGroupContent() (map[string]fstree.GroupSource, e
 		if c.IncludeCurrentUser {
 			currentUser, err := c.fetchCurrentUser()
 			if err != nil {
-				return nil, err
+				c.logger.Warn(err.Error())
+			} else {
+				rootGroupCache[currentUser.Name] = currentUser
 			}
-			rootGroupCache[currentUser.Name] = currentUser
 		}
 
 		c.rootGroupCache = rootGroupCache
