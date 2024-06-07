@@ -14,8 +14,8 @@ type User struct {
 
 	mux sync.Mutex
 
-	// user content cache
-	projectCache map[string]fstree.RepositorySource
+	// user content
+	childProjects map[string]fstree.RepositorySource
 }
 
 func (u *User) GetGroupID() uint64 {
@@ -26,7 +26,8 @@ func (u *User) InvalidateCache() {
 	u.mux.Lock()
 	defer u.mux.Unlock()
 
-	u.projectCache = nil
+	// clear child repositories from cache
+	u.childProjects = nil
 }
 
 func (c *gitlabClient) fetchUser(uid int) (*User, error) {
@@ -49,7 +50,7 @@ func (c *gitlabClient) fetchUser(uid int) (*User, error) {
 		ID:   gitlabUser.ID,
 		Name: gitlabUser.Username,
 
-		projectCache: nil,
+		childProjects: nil,
 	}
 
 	// save in cache
@@ -68,7 +69,7 @@ func (c *gitlabClient) fetchCurrentUser() (*User, error) {
 			ID:   gitlabUser.ID,
 			Name: gitlabUser.Username,
 
-			projectCache: nil,
+			childProjects: nil,
 		}
 		c.currentUserCache = &newUser
 	}
@@ -81,8 +82,8 @@ func (c *gitlabClient) fetchUserContent(user *User) (map[string]fstree.GroupSour
 
 	// Get cached data if available
 	// TODO: cache cache invalidation?
-	if user.projectCache == nil {
-		projectCache := make(map[string]fstree.RepositorySource)
+	if user.childProjects == nil {
+		childProjects := make(map[string]fstree.RepositorySource)
 
 		// Fetch the user repositories
 		listProjectOpt := &gitlab.ListProjectsOptions{
@@ -97,7 +98,7 @@ func (c *gitlabClient) fetchUserContent(user *User) (map[string]fstree.GroupSour
 			}
 			for _, gitlabProject := range gitlabProjects {
 				project := c.newProjectFromGitlabProject(gitlabProject)
-				projectCache[project.Name] = &project
+				childProjects[project.Name] = &project
 			}
 			if response.CurrentPage >= response.TotalPages {
 				break
@@ -106,7 +107,7 @@ func (c *gitlabClient) fetchUserContent(user *User) (map[string]fstree.GroupSour
 			listProjectOpt.Page = response.NextPage
 		}
 
-		user.projectCache = projectCache
+		user.childProjects = childProjects
 	}
-	return make(map[string]fstree.GroupSource), user.projectCache, nil
+	return make(map[string]fstree.GroupSource), user.childProjects, nil
 }
