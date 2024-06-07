@@ -34,7 +34,10 @@ func (c *gitlabClient) fetchUser(uid int) (*User, error) {
 	// TODO: cache invalidation?
 	user, found := c.userCache[uid]
 	if found {
+		c.logger.Debug("User cache hit", "uid", uid)
 		return user, nil
+	} else {
+		c.logger.Debug("User cache miss", "uid", uid)
 	}
 
 	// If not in cache, fetch group infos from API
