@@ -12,11 +12,13 @@ type Group struct {
 	ID   int
 	Name string
 
+	gitlabClient *gitlabClient
+
 	mux sync.Mutex
 
-	// group content cache
-	childGroups     map[string]fstree.GroupSource
-	childRepository map[string]fstree.RepositorySource
+	// group content
+	childGroups   map[string]fstree.GroupSource
+	childProjects map[string]fstree.RepositorySource
 }
 
 func (g *Group) GetGroupID() uint64 {
@@ -27,8 +29,15 @@ func (g *Group) InvalidateCache() {
 	g.mux.Lock()
 	defer g.mux.Unlock()
 
+	// clear child group from cache
+	for _, childGroup := range g.childGroups {
+		gid := int(childGroup.GetGroupID())
+		delete(g.gitlabClient.groupCache, gid)
+	}
 	g.childGroups = nil
-	g.childRepository = nil
+
+	// clear child repositories from cache
+	g.childGroups = nil
 }
 
 func (c *gitlabClient) fetchGroup(gid int) (*Group, error) {
@@ -52,8 +61,10 @@ func (c *gitlabClient) fetchGroup(gid int) (*Group, error) {
 		ID:   gitlabGroup.ID,
 		Name: gitlabGroup.Path,
 
-		childGroups:     nil,
-		childRepository: nil,
+		gitlabClient: c,
+
+		childGroups:   nil,
+		childProjects: nil,
 	}
 
 	// save in cache
@@ -79,8 +90,10 @@ func (c *gitlabClient) newGroupFromGitlabGroup(gitlabGroup *gitlab.Group) (*Grou
 		ID:   gitlabGroup.ID,
 		Name: gitlabGroup.Path,
 
-		childGroups:     nil,
-		childRepository: nil,
+		gitlabClient: c,
+
+		childGroups:   nil,
+		childProjects: nil,
 	}
 
 	// save in cache
@@ -95,9 +108,9 @@ func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupS
 
 	// Get cached data if available
 	// TODO: cache cache invalidation?
-	if group.childGroups == nil || group.childRepository == nil {
-		groupCache := make(map[string]fstree.GroupSource)
-		projectCache := make(map[string]fstree.RepositorySource)
+	if group.childGroups == nil || group.childProjects == nil {
+		childGroups := make(map[string]fstree.GroupSource)
+		childProjects := make(map[string]fstree.RepositorySource)
 
 		// List subgroups in path
 		ListGroupsOpt := &gitlab.ListSubgroupsOptions{
@@ -114,7 +127,7 @@ func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupS
 			}
 			for _, gitlabGroup := range gitlabGroups {
 				group, _ := c.newGroupFromGitlabGroup(gitlabGroup)
-				groupCache[group.Name] = group
+				childGroups[group.Name] = group
 			}
 			if response.CurrentPage >= response.TotalPages {
 				break
@@ -136,7 +149,7 @@ func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupS
 			}
 			for _, gitlabProject := range gitlabProjects {
 				project := c.newProjectFromGitlabProject(gitlabProject)
-				projectCache[project.Name] = &project
+				childProjects[project.Name] = &project
 			}
 			if response.CurrentPage >= response.TotalPages {
 				break
@@ -145,8 +158,8 @@ func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupS
 			listProjectOpt.Page = response.NextPage
 		}
 
-		group.childGroups = groupCache
-		group.childRepository = projectCache
+		group.childGroups = childGroups
+		group.childProjects = childProjects
 	}
-	return group.childGroups, group.childRepository, nil
+	return group.childGroups, group.childProjects, nil
 }
