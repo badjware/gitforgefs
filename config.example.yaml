@@ -14,6 +14,12 @@ gitlab:
   # Default to anonymous (only public projects will be visible).
   #token:
 
+  # Must be set to either "http" or "ssh".
+  # The protocol to configure the git remote on.
+  # "http" may not work on private repos unless a credential manager is configured
+  # If possible, prefer "ssh" over "http"
+  pull_method: http
+
   # A list of the group ids to expose their projects in the filesystem.
   group_ids:
     - 9970 # gitlab-org
@@ -31,12 +37,6 @@ git:
 
   # The name of the remote in the local clone.
   remote: origin
-
-  # Must be set to either "http" or "ssh".
-  # The protocol to configure the git remote on.
-  # "http" may not work on private repos unless a credential manager is configured
-  # If possible, prefer "ssh" over "http"
-  pull_method: http
 
   # Must be set to either "init", or "clone".
   # If set to "init", the local copy will be initialized with `git init` and the remote is configured manually. The git server is nerver queried. (fast)

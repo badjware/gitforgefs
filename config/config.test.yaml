@@ -1,0 +1,22 @@
+fs:
+  mountpoint: /tmp/gitlabfs/test/mnt
+  mountoptions: nodev
+
+gitlab:
+  url: https://example.com
+  token: "12345"
+  group_ids:
+    - 123
+  user_ids:
+    - 456
+  include_current_user: true
+  pull_method: ssh
+
+git:
+  clone_location: /tmp/gitlabfs/test/clone
+  remote: origin
+  on_clone: clone
+  auto_pull: false
+  depth: 0
+  queue_size: 100
+  worker_count: 1

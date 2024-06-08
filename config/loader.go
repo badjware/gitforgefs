@@ -38,10 +38,10 @@ func LoadConfig(configPath string) (*Config, error) {
 		Gitlab: gitlab.GitlabClientConfig{
 			URL:                "https://gitlab.com",
 			Token:              "",
+			PullMethod:         "http",
 			GroupIDs:           []int{9970},
 			UserIDs:            []int{},
 			IncludeCurrentUser: true,
-			PullMethod:         "http",
 		},
 		Git: git.GitClientParam{
 			CloneLocation:    defaultCloneLocation,
