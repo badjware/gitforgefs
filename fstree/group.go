@@ -18,7 +18,7 @@ type groupNode struct {
 
 type GroupSource interface {
 	GetGroupID() uint64
-	InvalidateCache()
+	InvalidateContentCache()
 }
 
 // Ensure we are implementing the NodeReaddirer interface

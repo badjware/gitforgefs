@@ -16,7 +16,7 @@ type Group struct {
 
 	mux sync.Mutex
 
-	// group content
+	// hold group content
 	childGroups   map[string]fstree.GroupSource
 	childProjects map[string]fstree.RepositorySource
 }
@@ -25,15 +25,17 @@ func (g *Group) GetGroupID() uint64 {
 	return uint64(g.ID)
 }
 
-func (g *Group) InvalidateCache() {
+func (g *Group) InvalidateContentCache() {
 	g.mux.Lock()
 	defer g.mux.Unlock()
 
 	// clear child group from cache
+	g.gitlabClient.groupCacheMux.Lock()
 	for _, childGroup := range g.childGroups {
 		gid := int(childGroup.GetGroupID())
 		delete(g.gitlabClient.groupCache, gid)
 	}
+	g.gitlabClient.groupCacheMux.Unlock()
 	g.childGroups = nil
 
 	// clear child repositories from cache
@@ -43,7 +45,9 @@ func (g *Group) InvalidateCache() {
 func (c *gitlabClient) fetchGroup(gid int) (*Group, error) {
 	// start by searching the cache
 	// TODO: cache invalidation?
+	c.groupCacheMux.RLock()
 	group, found := c.groupCache[gid]
+	c.groupCacheMux.RUnlock()
 	if found {
 		c.logger.Debug("Group cache hit", "gid", gid)
 		return group, nil
@@ -68,7 +72,9 @@ func (c *gitlabClient) fetchGroup(gid int) (*Group, error) {
 	}
 
 	// save in cache
+	c.groupCacheMux.Lock()
 	c.groupCache[gid] = &newGroup
+	c.groupCacheMux.Unlock()
 
 	return &newGroup, nil
 }
@@ -77,15 +83,18 @@ func (c *gitlabClient) newGroupFromGitlabGroup(gitlabGroup *gitlab.Group) (*Grou
 	gid := gitlabGroup.ID
 
 	// start by searching the cache
+	c.groupCacheMux.RLock()
 	group, found := c.groupCache[gid]
+	c.groupCacheMux.RUnlock()
 	if found {
+		// if found in cache, return the cached reference
 		c.logger.Debug("Group cache hit", "gid", gid)
 		return group, nil
 	} else {
 		c.logger.Debug("Group cache miss; registering group", "gid", gid)
 	}
 
-	// if not in cache, convert and save to cache now
+	// if not found in cache, convert and save to cache now
 	newGroup := Group{
 		ID:   gitlabGroup.ID,
 		Name: gitlabGroup.Path,
@@ -97,12 +106,17 @@ func (c *gitlabClient) newGroupFromGitlabGroup(gitlabGroup *gitlab.Group) (*Grou
 	}
 
 	// save in cache
+	c.groupCacheMux.Lock()
 	c.groupCache[gid] = &newGroup
+	c.groupCacheMux.Unlock()
 
 	return &newGroup, nil
 }
 
 func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
+	// Only a single routine can fetch the group content at the time.
+	// We lock for the whole duration of the function to avoid fetching the same data from the API
+	// multiple times if concurrent calls where to occur.
 	group.mux.Lock()
 	defer group.mux.Unlock()
 

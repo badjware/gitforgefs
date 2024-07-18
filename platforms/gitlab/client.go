@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
+	"sync"
 
 	"github.com/badjware/gitlabfs/fstree"
 	"github.com/xanzy/go-gitlab"
@@ -34,8 +35,10 @@ type gitlabClient struct {
 	currentUserCache *User
 
 	// API response cache
-	groupCache map[int]*Group
-	userCache  map[int]*User
+	groupCacheMux sync.RWMutex
+	groupCache    map[int]*Group
+	userCacheMux  sync.RWMutex
+	userCache     map[int]*User
 }
 
 func NewClient(logger *slog.Logger, gitlabUrl string, gitlabToken string, p GitlabClientConfig) (*gitlabClient, error) {

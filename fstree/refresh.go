@@ -41,6 +41,6 @@ func (n *refreshNode) Setattr(ctx context.Context, fh fs.FileHandle, in *fuse.Se
 }
 
 func (n *refreshNode) Open(ctx context.Context, flags uint32) (fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
-	n.source.InvalidateCache()
+	n.source.InvalidateContentCache()
 	return nil, 0, 0
 }

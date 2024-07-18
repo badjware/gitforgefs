@@ -14,7 +14,7 @@ type User struct {
 
 	mux sync.Mutex
 
-	// user content
+	// hold user content
 	childProjects map[string]fstree.RepositorySource
 }
 
@@ -22,7 +22,7 @@ func (u *User) GetGroupID() uint64 {
 	return uint64(u.ID)
 }
 
-func (u *User) InvalidateCache() {
+func (u *User) InvalidateContentCache() {
 	u.mux.Lock()
 	defer u.mux.Unlock()
 
@@ -33,15 +33,18 @@ func (u *User) InvalidateCache() {
 func (c *gitlabClient) fetchUser(uid int) (*User, error) {
 	// start by searching the cache
 	// TODO: cache invalidation?
+	c.userCacheMux.RLock()
 	user, found := c.userCache[uid]
+	c.userCacheMux.RUnlock()
 	if found {
+		// if found in cache, return the cached reference
 		c.logger.Debug("User cache hit", "uid", uid)
 		return user, nil
 	} else {
 		c.logger.Debug("User cache miss", "uid", uid)
 	}
 
-	// If not in cache, fetch group infos from API
+	// If not found in cache, fetch group infos from API
 	gitlabUser, _, err := c.client.Users.GetUser(uid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user with id %v: %v", uid, err)
@@ -55,6 +58,7 @@ func (c *gitlabClient) fetchUser(uid int) (*User, error) {
 
 	// save in cache
 	c.userCache[uid] = &newUser
+	c.userCacheMux.Unlock()
 
 	return &newUser, nil
 }
@@ -77,6 +81,9 @@ func (c *gitlabClient) fetchCurrentUser() (*User, error) {
 }
 
 func (c *gitlabClient) fetchUserContent(user *User) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
+	// Only a single routine can fetch the user content at the time.
+	// We lock for the whole duration of the function to avoid fetching the same data from the API
+	// multiple times if concurrent calls where to occur.
 	user.mux.Lock()
 	defer user.mux.Unlock()
 
