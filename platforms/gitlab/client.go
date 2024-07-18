@@ -13,15 +13,20 @@ import (
 const (
 	PullMethodHTTP = "http"
 	PullMethodSSH  = "ssh"
+
+	ArchivedProjectShow   = "show"
+	ArchivedProjectHide   = "hide"
+	ArchivedProjectIgnore = "ignore"
 )
 
 type GitlabClientConfig struct {
-	URL                string `yaml:"url,omitempty"`
-	Token              string `yaml:"token,omitempty"`
-	GroupIDs           []int  `yaml:"group_ids,omitempty"`
-	UserIDs            []int  `yaml:"user_ids,omitempty"`
-	IncludeCurrentUser bool   `yaml:"include_current_user,omitempty"`
-	PullMethod         string `yaml:"pull_method,omitempty"`
+	URL                     string `yaml:"url,omitempty"`
+	Token                   string `yaml:"token,omitempty"`
+	GroupIDs                []int  `yaml:"group_ids,omitempty"`
+	UserIDs                 []int  `yaml:"user_ids,omitempty"`
+	ArchivedProjectHandling string `yaml:"archived_project_handling,omitempty"`
+	IncludeCurrentUser      bool   `yaml:"include_current_user,omitempty"`
+	PullMethod              string `yaml:"pull_method,omitempty"`
 }
 
 type gitlabClient struct {
