@@ -163,7 +163,9 @@ func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupS
 			}
 			for _, gitlabProject := range gitlabProjects {
 				project := c.newProjectFromGitlabProject(gitlabProject)
-				childProjects[project.Name] = &project
+				if project != nil {
+					childProjects[project.Path] = project
+				}
 			}
 			if response.CurrentPage >= response.TotalPages {
 				break

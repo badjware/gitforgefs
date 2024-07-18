@@ -36,12 +36,13 @@ func LoadConfig(configPath string) (*Config, error) {
 			MountOptions: "nodev,nosuid",
 		},
 		Gitlab: gitlab.GitlabClientConfig{
-			URL:                "https://gitlab.com",
-			Token:              "",
-			PullMethod:         "http",
-			GroupIDs:           []int{9970},
-			UserIDs:            []int{},
-			IncludeCurrentUser: true,
+			URL:                     "https://gitlab.com",
+			Token:                   "",
+			PullMethod:              "http",
+			GroupIDs:                []int{9970},
+			UserIDs:                 []int{},
+			ArchivedProjectHandling: "hide",
+			IncludeCurrentUser:      true,
 		},
 		Git: git.GitClientParam{
 			CloneLocation:    defaultCloneLocation,
@@ -83,6 +84,11 @@ func MakeGitlabConfig(config *Config) (*gitlab.GitlabClientConfig, error) {
 	// parse pull_method
 	if config.Gitlab.PullMethod != gitlab.PullMethodHTTP && config.Gitlab.PullMethod != gitlab.PullMethodSSH {
 		return nil, fmt.Errorf("pull_method must be either \"%v\" or \"%v\"", gitlab.PullMethodHTTP, gitlab.PullMethodSSH)
+	}
+
+	// parse archive_handing
+	if config.Gitlab.ArchivedProjectHandling != gitlab.ArchivedProjectShow && config.Gitlab.ArchivedProjectHandling != gitlab.ArchivedProjectHide && config.Gitlab.ArchivedProjectHandling != gitlab.ArchivedProjectIgnore {
+		return nil, fmt.Errorf("pull_method must be either \"%v\", \"%v\" or \"%v\"", gitlab.ArchivedProjectShow, gitlab.ArchivedProjectHide, gitlab.ArchivedProjectIgnore)
 	}
 
 	return &config.Gitlab, nil

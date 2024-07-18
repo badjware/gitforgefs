@@ -105,7 +105,9 @@ func (c *gitlabClient) fetchUserContent(user *User) (map[string]fstree.GroupSour
 			}
 			for _, gitlabProject := range gitlabProjects {
 				project := c.newProjectFromGitlabProject(gitlabProject)
-				childProjects[project.Name] = &project
+				if project != nil {
+					childProjects[project.Path] = project
+				}
 			}
 			if response.CurrentPage >= response.TotalPages {
 				break

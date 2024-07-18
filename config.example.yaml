@@ -27,6 +27,13 @@ gitlab:
   # A list of the user ids to expose their personal projects in the filesystem.
   user_ids: []
 
+  # Set how archived projects are handled.
+  # If set to "show", it will add them to the filesystem and treat them like any other repository
+  # If set to "hide", it will add them to the filesystem, but prefix the symlink with a "."
+  # If set to "ignore", it will make them absent from the filesystem
+  # Default to "hide"
+  archived_project_handling: hide
+
   # If set to true, the user the api token belongs to will automatically be added to the list of users exposed by the filesystem.
   include_current_user: true
 

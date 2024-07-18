@@ -1,12 +1,14 @@
 package gitlab
 
 import (
+	"path"
+
 	"github.com/xanzy/go-gitlab"
 )
 
 type Project struct {
 	ID            int
-	Name          string
+	Path          string
 	CloneURL      string
 	DefaultBranch string
 }
@@ -23,11 +25,14 @@ func (p *Project) GetDefaultBranch() string {
 	return p.DefaultBranch
 }
 
-func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) Project {
+func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) *Project {
 	// https://godoc.org/github.com/xanzy/go-gitlab#Project
+	if c.ArchivedProjectHandling == ArchivedProjectIgnore && project.Archived {
+		return nil
+	}
 	p := Project{
 		ID:            project.ID,
-		Name:          project.Path,
+		Path:          project.Path,
 		DefaultBranch: project.DefaultBranch,
 	}
 	if p.DefaultBranch == "" {
@@ -38,5 +43,8 @@ func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) Proj
 	} else {
 		p.CloneURL = project.HTTPURLToRepo
 	}
-	return p
+	if c.ArchivedProjectHandling == ArchivedProjectHide && project.Archived {
+		p.Path = path.Join(path.Dir(p.Path), "."+path.Base(p.Path))
+	}
+	return &p
 }
