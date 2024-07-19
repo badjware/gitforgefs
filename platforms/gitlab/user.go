@@ -57,6 +57,7 @@ func (c *gitlabClient) fetchUser(uid int) (*User, error) {
 	}
 
 	// save in cache
+	c.userCacheMux.Lock()
 	c.userCache[uid] = &newUser
 	c.userCacheMux.Unlock()
 
