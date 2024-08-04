@@ -28,17 +28,17 @@ type gitlabClient struct {
 	userCache     map[int]*User
 }
 
-func NewClient(logger *slog.Logger, gitlabUrl string, gitlabToken string, p config.GitlabClientConfig) (*gitlabClient, error) {
+func NewClient(logger *slog.Logger, config config.GitlabClientConfig) (*gitlabClient, error) {
 	client, err := gitlab.NewClient(
-		gitlabToken,
-		gitlab.WithBaseURL(gitlabUrl),
+		config.Token,
+		gitlab.WithBaseURL(config.URL),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gitlab client: %v", err)
 	}
 
 	gitlabClient := &gitlabClient{
-		GitlabClientConfig: p,
+		GitlabClientConfig: config,
 		client:             client,
 
 		logger: logger,
