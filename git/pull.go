@@ -24,13 +24,13 @@ func (c *gitClient) pull(repoPath string, defaultBranch string) error {
 		args := []string{
 			"pull",
 		}
-		if c.GitClientParam.Depth != 0 {
-			args = append(args, "--depth", strconv.Itoa(c.GitClientParam.Depth))
+		if c.GitClientConfig.Depth != 0 {
+			args = append(args, "--depth", strconv.Itoa(c.GitClientConfig.Depth))
 		}
 		args = append(args,
 			"--",
-			c.GitClientParam.Remote, // repository
-			defaultBranch,           // refspec
+			c.GitClientConfig.Remote, // repository
+			defaultBranch,            // refspec
 		)
 
 		_, err = utils.ExecProcessInDir(c.logger, repoPath, "git", args...)

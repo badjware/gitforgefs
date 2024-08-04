@@ -6,31 +6,13 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/badjware/gitlabfs/config"
 	"github.com/badjware/gitlabfs/fstree"
 	"github.com/xanzy/go-gitlab"
 )
 
-const (
-	PullMethodHTTP = "http"
-	PullMethodSSH  = "ssh"
-
-	ArchivedProjectShow   = "show"
-	ArchivedProjectHide   = "hide"
-	ArchivedProjectIgnore = "ignore"
-)
-
-type GitlabClientConfig struct {
-	URL                     string `yaml:"url,omitempty"`
-	Token                   string `yaml:"token,omitempty"`
-	GroupIDs                []int  `yaml:"group_ids,omitempty"`
-	UserIDs                 []int  `yaml:"user_ids,omitempty"`
-	ArchivedProjectHandling string `yaml:"archived_project_handling,omitempty"`
-	IncludeCurrentUser      bool   `yaml:"include_current_user,omitempty"`
-	PullMethod              string `yaml:"pull_method,omitempty"`
-}
-
 type gitlabClient struct {
-	GitlabClientConfig
+	config.GitlabClientConfig
 	client *gitlab.Client
 
 	logger *slog.Logger
@@ -46,7 +28,7 @@ type gitlabClient struct {
 	userCache     map[int]*User
 }
 
-func NewClient(logger *slog.Logger, gitlabUrl string, gitlabToken string, p GitlabClientConfig) (*gitlabClient, error) {
+func NewClient(logger *slog.Logger, gitlabUrl string, gitlabToken string, p config.GitlabClientConfig) (*gitlabClient, error) {
 	client, err := gitlab.NewClient(
 		gitlabToken,
 		gitlab.WithBaseURL(gitlabUrl),

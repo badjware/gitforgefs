@@ -10,24 +10,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/badjware/gitlabfs/config"
 	"github.com/badjware/gitlabfs/fstree"
 	"github.com/badjware/gitlabfs/utils"
 	"github.com/vmihailenco/taskq/v3"
 	"github.com/vmihailenco/taskq/v3/memqueue"
 )
 
-type GitClientParam struct {
-	CloneLocation    string `yaml:"clone_location,omitempty"`
-	Remote           string `yaml:"remote,omitempty"`
-	OnClone          string `yaml:"on_clone,omitempty"`
-	AutoPull         bool   `yaml:"auto_pull,omitempty"`
-	Depth            int    `yaml:"depth,omitempty"`
-	QueueSize        int    `yaml:"queue_size,omitempty"`
-	QueueWorkerCount int    `yaml:"worker_count,omitempty"`
-}
-
 type gitClient struct {
-	GitClientParam
+	config.GitClientConfig
 
 	logger *slog.Logger
 
@@ -42,11 +33,11 @@ type gitClient struct {
 	pullTask  *taskq.Task
 }
 
-func NewClient(logger *slog.Logger, p GitClientParam) (*gitClient, error) {
+func NewClient(logger *slog.Logger, p config.GitClientConfig) (*gitClient, error) {
 	queueFactory := memqueue.NewFactory()
 	// Create the client
 	c := &gitClient{
-		GitClientParam: p,
+		GitClientConfig: p,
 
 		logger: logger,
 

@@ -3,6 +3,7 @@ package gitlab
 import (
 	"path"
 
+	"github.com/badjware/gitlabfs/config"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -27,7 +28,7 @@ func (p *Project) GetDefaultBranch() string {
 
 func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) *Project {
 	// https://godoc.org/github.com/xanzy/go-gitlab#Project
-	if c.ArchivedProjectHandling == ArchivedProjectIgnore && project.Archived {
+	if c.ArchivedProjectHandling == config.ArchivedProjectIgnore && project.Archived {
 		return nil
 	}
 	p := Project{
@@ -38,12 +39,12 @@ func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) *Pro
 	if p.DefaultBranch == "" {
 		p.DefaultBranch = "master"
 	}
-	if c.PullMethod == PullMethodSSH {
+	if c.PullMethod == config.PullMethodSSH {
 		p.CloneURL = project.SSHURLToRepo
 	} else {
 		p.CloneURL = project.HTTPURLToRepo
 	}
-	if c.ArchivedProjectHandling == ArchivedProjectHide && project.Archived {
+	if c.ArchivedProjectHandling == config.ArchivedProjectHide && project.Archived {
 		p.Path = path.Join(path.Dir(p.Path), "."+path.Base(p.Path))
 	}
 	return &p

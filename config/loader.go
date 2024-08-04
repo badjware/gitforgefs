@@ -5,20 +5,62 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/badjware/gitlabfs/git"
-	"github.com/badjware/gitlabfs/platforms/gitlab"
 	"gopkg.in/yaml.v2"
+)
+
+const (
+	PlatformGitlab = "gitlab"
+	PlatformGithub = "github"
+
+	PullMethodHTTP = "http"
+	PullMethodSSH  = "ssh"
+
+	ArchivedProjectShow   = "show"
+	ArchivedProjectHide   = "hide"
+	ArchivedProjectIgnore = "ignore"
 )
 
 type (
 	Config struct {
-		FS     FSConfig                  `yaml:"fs,omitempty"`
-		Gitlab gitlab.GitlabClientConfig `yaml:"gitlab,omitempty"`
-		Git    git.GitClientParam        `yaml:"git,omitempty"`
+		FS     FSConfig           `yaml:"fs,omitempty"`
+		Gitlab GitlabClientConfig `yaml:"gitlab,omitempty"`
+		Github GithubClientConfig `yaml:"github,omitempty"`
+		Git    GitClientConfig    `yaml:"git,omitempty"`
 	}
 	FSConfig struct {
 		Mountpoint   string `yaml:"mountpoint,omitempty"`
 		MountOptions string `yaml:"mountoptions,omitempty"`
+		Platform     string `yaml:"platform,omitempty"`
+	}
+	GitlabClientConfig struct {
+		URL   string `yaml:"url,omitempty"`
+		Token string `yaml:"token,omitempty"`
+
+		GroupIDs []int `yaml:"group_ids,omitempty"`
+		UserIDs  []int `yaml:"user_ids,omitempty"`
+
+		ArchivedProjectHandling string `yaml:"archived_project_handling,omitempty"`
+		IncludeCurrentUser      bool   `yaml:"include_current_user,omitempty"`
+		PullMethod              string `yaml:"pull_method,omitempty"`
+	}
+	GithubClientConfig struct {
+		Token string `yaml:"token,omitempty"`
+
+		OrgNames  []string `yaml:"org_names,omitempty"`
+		UserNames []string `yaml:"user_names,omitempty"`
+
+		ArchivedRepoHandling string `yaml:"archived_repo_handling,omitempty"`
+		IncludeCurrentUser   bool   `yaml:"include_current_user,omitempty"`
+		PullMethod           string `yaml:"pull_method,omitempty"`
+	}
+	GitClientConfig struct {
+		CloneLocation    string `yaml:"clone_location,omitempty"`
+		Remote           string `yaml:"remote,omitempty"`
+		OnClone          string `yaml:"on_clone,omitempty"`
+		AutoPull         bool   `yaml:"auto_pull,omitempty"`
+		Depth            int    `yaml:"depth,omitempty"`
+		QueueSize        int    `yaml:"queue_size,omitempty"`
+		QueueWorkerCount int    `yaml:"worker_count,omitempty"`
 	}
 )
 
@@ -34,8 +76,9 @@ func LoadConfig(configPath string) (*Config, error) {
 		FS: FSConfig{
 			Mountpoint:   "",
 			MountOptions: "nodev,nosuid",
+			Platform:     "",
 		},
-		Gitlab: gitlab.GitlabClientConfig{
+		Gitlab: GitlabClientConfig{
 			URL:                     "https://gitlab.com",
 			Token:                   "",
 			PullMethod:              "http",
@@ -44,7 +87,15 @@ func LoadConfig(configPath string) (*Config, error) {
 			ArchivedProjectHandling: "hide",
 			IncludeCurrentUser:      true,
 		},
-		Git: git.GitClientParam{
+		Github: GithubClientConfig{
+			Token:                "",
+			PullMethod:           "http",
+			OrgNames:             []string{},
+			UserNames:            []string{},
+			ArchivedRepoHandling: "hide",
+			IncludeCurrentUser:   true,
+		},
+		Git: GitClientConfig{
 			CloneLocation:    defaultCloneLocation,
 			Remote:           "origin",
 			OnClone:          "init",
@@ -68,28 +119,47 @@ func LoadConfig(configPath string) (*Config, error) {
 		}
 	}
 
+	// validate platform is set
+	if config.FS.Platform != PlatformGithub && config.FS.Platform != PlatformGitlab {
+		return nil, fmt.Errorf("fs.platform must be either \"%v\", or \"%v\"", PlatformGitlab, PlatformGithub)
+	}
+
 	return config, nil
 }
 
-func MakeGitConfig(config *Config) (*git.GitClientParam, error) {
-	// parse on_clone
-	if config.Git.OnClone != "init" && config.Git.OnClone != "clone" {
-		return nil, fmt.Errorf("on_clone must be either \"init\" or \"clone\"")
-	}
-
-	return &config.Git, nil
-}
-
-func MakeGitlabConfig(config *Config) (*gitlab.GitlabClientConfig, error) {
+func MakeGitlabConfig(config *Config) (*GitlabClientConfig, error) {
 	// parse pull_method
-	if config.Gitlab.PullMethod != gitlab.PullMethodHTTP && config.Gitlab.PullMethod != gitlab.PullMethodSSH {
-		return nil, fmt.Errorf("pull_method must be either \"%v\" or \"%v\"", gitlab.PullMethodHTTP, gitlab.PullMethodSSH)
+	if config.Gitlab.PullMethod != PullMethodHTTP && config.Gitlab.PullMethod != PullMethodSSH {
+		return nil, fmt.Errorf("gitlab.pull_method must be either \"%v\" or \"%v\"", PullMethodHTTP, PullMethodSSH)
 	}
 
 	// parse archive_handing
-	if config.Gitlab.ArchivedProjectHandling != gitlab.ArchivedProjectShow && config.Gitlab.ArchivedProjectHandling != gitlab.ArchivedProjectHide && config.Gitlab.ArchivedProjectHandling != gitlab.ArchivedProjectIgnore {
-		return nil, fmt.Errorf("pull_method must be either \"%v\", \"%v\" or \"%v\"", gitlab.ArchivedProjectShow, gitlab.ArchivedProjectHide, gitlab.ArchivedProjectIgnore)
+	if config.Gitlab.ArchivedProjectHandling != ArchivedProjectShow && config.Gitlab.ArchivedProjectHandling != ArchivedProjectHide && config.Gitlab.ArchivedProjectHandling != ArchivedProjectIgnore {
+		return nil, fmt.Errorf("gitlab.archived_project_handling must be either \"%v\", \"%v\" or \"%v\"", ArchivedProjectShow, ArchivedProjectHide, ArchivedProjectIgnore)
 	}
 
 	return &config.Gitlab, nil
+}
+
+func MakeGithubConfig(config *Config) (*GithubClientConfig, error) {
+	// parse pull_method
+	if config.Gitlab.PullMethod != PullMethodHTTP && config.Gitlab.PullMethod != PullMethodSSH {
+		return nil, fmt.Errorf("github.pull_method must be either \"%v\" or \"%v\"", PullMethodHTTP, PullMethodSSH)
+	}
+
+	// parse archive_handing
+	if config.Gitlab.ArchivedProjectHandling != ArchivedProjectShow && config.Gitlab.ArchivedProjectHandling != ArchivedProjectHide && config.Gitlab.ArchivedProjectHandling != ArchivedProjectIgnore {
+		return nil, fmt.Errorf("github.archived_repo_handling must be either \"%v\", \"%v\" or \"%v\"", ArchivedProjectShow, ArchivedProjectHide, ArchivedProjectIgnore)
+	}
+
+	return &config.Github, nil
+}
+
+func MakeGitConfig(config *Config) (*GitClientConfig, error) {
+	// parse on_clone
+	if config.Git.OnClone != "init" && config.Git.OnClone != "clone" {
+		return nil, fmt.Errorf("git.on_clone must be either \"init\" or \"clone\"")
+	}
+
+	return &config.Git, nil
 }
