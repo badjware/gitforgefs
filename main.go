@@ -73,7 +73,7 @@ func main() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		gitPlatformClient, _ = gitlab.NewClient(logger, loadedConfig.Gitlab.URL, loadedConfig.Gitlab.Token, *GitlabClientConfig)
+		gitPlatformClient, _ = gitlab.NewClient(logger, *GitlabClientConfig)
 	} else if loadedConfig.FS.Platform == config.PlatformGithub {
 		// Create the github client
 		GithubClientConfig, err := config.MakeGithubConfig(loadedConfig)

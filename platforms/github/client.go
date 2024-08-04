@@ -1,7 +1,9 @@
 package github
 
 import (
+	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/badjware/gitlabfs/config"
 	"github.com/badjware/gitlabfs/fstree"
@@ -15,6 +17,11 @@ type githubClient struct {
 	logger *slog.Logger
 
 	rootContent map[string]fstree.GroupSource
+
+	// API response cache
+	organizationCacheMux    sync.RWMutex
+	organizationNameToIDMap map[string]int64
+	organizationCache       map[int64]*Organization
 }
 
 func NewClient(logger *slog.Logger, config config.GithubClientConfig) (*githubClient, error) {
@@ -28,15 +35,38 @@ func NewClient(logger *slog.Logger, config config.GithubClientConfig) (*githubCl
 		client:             client,
 
 		logger: logger,
+
+		rootContent: nil,
+
+		organizationNameToIDMap: map[string]int64{},
+		organizationCache:       map[int64]*Organization{},
 	}
 
 	return gitHubClient, nil
 }
 
 func (c *githubClient) FetchRootGroupContent() (map[string]fstree.GroupSource, error) {
-	return nil, nil
+	if c.rootContent == nil {
+		rootContent := make(map[string]fstree.GroupSource)
+
+		for _, org_name := range c.GithubClientConfig.OrgNames {
+			org, err := c.fetchOrganization(org_name)
+			if err != nil {
+				c.logger.Warn(err.Error())
+			} else {
+				rootContent[org.Name] = org
+			}
+		}
+		// TODO: user + current user
+
+		c.rootContent = rootContent
+	}
+	return c.rootContent, nil
 }
 
 func (c *githubClient) FetchGroupContent(gid uint64) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
-	return nil, nil, nil
+	if org, found := c.organizationCache[int64(gid)]; found {
+		return c.fetchOrganizationContent(org)
+	}
+	return nil, nil, fmt.Errorf("invalid gid: %v", gid)
 }
