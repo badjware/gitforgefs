@@ -1,19 +1,31 @@
 fs:
-  mountpoint: /tmp/gitlabfs/test/mnt
+  mountpoint: /tmp/gitlabfs/test/mnt/gitlab
   mountoptions: nodev
+  platform: gitlab
 
 gitlab:
   url: https://example.com
   token: "12345"
+  pull_method: ssh
   group_ids:
     - 123
   user_ids:
     - 456
+  archived_project_handling: hide
   include_current_user: true
-  pull_method: ssh
+
+github:
+  token: "12345"
+  pull_method: http
+  org_names: 
+    - test-org
+  user_names:
+    - test-user
+  archived_repo_handling: hide
+  include_current_user: true
 
 git:
-  clone_location: /tmp/gitlabfs/test/clone
+  clone_location: /tmp/gitlabfs/test/cache/gitlab
   remote: origin
   on_clone: clone
   auto_pull: false

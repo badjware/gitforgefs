@@ -10,6 +10,7 @@ import (
 	"github.com/badjware/gitlabfs/config"
 	"github.com/badjware/gitlabfs/fstree"
 	"github.com/badjware/gitlabfs/git"
+	"github.com/badjware/gitlabfs/platforms/github"
 	"github.com/badjware/gitlabfs/platforms/gitlab"
 )
 
@@ -64,20 +65,31 @@ func main() {
 	}
 	gitClient, _ := git.NewClient(logger, *gitClientParam)
 
-	// Create the gitlab client
-	GitlabClientConfig, err := config.MakeGitlabConfig(loadedConfig)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	var gitPlatformClient fstree.GitPlatform
+	if loadedConfig.FS.Platform == config.PlatformGitlab {
+		// Create the gitlab client
+		GitlabClientConfig, err := config.MakeGitlabConfig(loadedConfig)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		gitPlatformClient, _ = gitlab.NewClient(logger, loadedConfig.Gitlab.URL, loadedConfig.Gitlab.Token, *GitlabClientConfig)
+	} else if loadedConfig.FS.Platform == config.PlatformGithub {
+		// Create the github client
+		GithubClientConfig, err := config.MakeGithubConfig(loadedConfig)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		gitPlatformClient, _ = github.NewClient(logger, *GithubClientConfig)
 	}
-	gitlabClient, _ := gitlab.NewClient(logger, loadedConfig.Gitlab.URL, loadedConfig.Gitlab.Token, *GitlabClientConfig)
 
 	// Start the filesystem
 	err = fstree.Start(
 		logger,
 		mountpoint,
 		parsedMountoptions,
-		&fstree.FSParam{GitClient: gitClient, GitPlatform: gitlabClient},
+		&fstree.FSParam{GitClient: gitClient, GitPlatform: gitPlatformClient},
 		*debug,
 	)
 	if err != nil {

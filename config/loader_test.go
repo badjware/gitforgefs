@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/badjware/gitlabfs/config"
-	"github.com/badjware/gitlabfs/git"
-	"github.com/badjware/gitlabfs/platforms/gitlab"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -18,10 +16,11 @@ func TestLoadConfig(t *testing.T) {
 			input: "config.test.yaml",
 			expected: &config.Config{
 				FS: config.FSConfig{
-					Mountpoint:   "/tmp/gitlabfs/test/mnt",
+					Mountpoint:   "/tmp/gitlabfs/test/mnt/gitlab",
 					MountOptions: "nodev",
+					Platform:     "gitlab",
 				},
-				Gitlab: gitlab.GitlabClientConfig{
+				Gitlab: config.GitlabClientConfig{
 					URL:                     "https://example.com",
 					Token:                   "12345",
 					PullMethod:              "ssh",
@@ -30,8 +29,16 @@ func TestLoadConfig(t *testing.T) {
 					ArchivedProjectHandling: "hide",
 					IncludeCurrentUser:      true,
 				},
-				Git: git.GitClientParam{
-					CloneLocation:    "/tmp/gitlabfs/test/clone",
+				Github: config.GithubClientConfig{
+					Token:                "12345",
+					PullMethod:           "http",
+					OrgNames:             []string{"test-org"},
+					UserNames:            []string{"test-user"},
+					ArchivedRepoHandling: "hide",
+					IncludeCurrentUser:   true,
+				},
+				Git: config.GitClientConfig{
+					CloneLocation:    "/tmp/gitlabfs/test/cache/gitlab",
 					Remote:           "origin",
 					OnClone:          "clone",
 					AutoPull:         false,
@@ -58,11 +65,14 @@ func TestLoadConfig(t *testing.T) {
 func TestMakeGitConfig(t *testing.T) {
 	tests := map[string]struct {
 		input    *config.Config
-		expected *git.GitClientParam
+		expected *config.GitClientConfig
 	}{
 		"ValidConfig": {
 			input: &config.Config{
-				Git: git.GitClientParam{
+				FS: config.FSConfig{
+					Platform: "gitlab",
+				},
+				Git: config.GitClientConfig{
 					CloneLocation:    "/tmp",
 					Remote:           "origin",
 					OnClone:          "init",
@@ -72,7 +82,7 @@ func TestMakeGitConfig(t *testing.T) {
 					QueueWorkerCount: 5,
 				},
 			},
-			expected: &git.GitClientParam{
+			expected: &config.GitClientConfig{
 				CloneLocation:    "/tmp",
 				Remote:           "origin",
 				OnClone:          "init",
@@ -84,7 +94,10 @@ func TestMakeGitConfig(t *testing.T) {
 		},
 		"InvalidOnClone": {
 			input: &config.Config{
-				Git: git.GitClientParam{
+				FS: config.FSConfig{
+					Platform: "gitlab",
+				},
+				Git: config.GitClientConfig{
 					CloneLocation:    "/tmp",
 					Remote:           "origin",
 					OnClone:          "invalid",
@@ -114,11 +127,14 @@ func TestMakeGitConfig(t *testing.T) {
 func TestMakeGitlabConfig(t *testing.T) {
 	tests := map[string]struct {
 		input    *config.Config
-		expected *gitlab.GitlabClientConfig
+		expected *config.GitlabClientConfig
 	}{
 		"ValidConfig": {
 			input: &config.Config{
-				Gitlab: gitlab.GitlabClientConfig{
+				FS: config.FSConfig{
+					Platform: "gitlab",
+				},
+				Gitlab: config.GitlabClientConfig{
 					URL:                     "https://gitlab.com",
 					PullMethod:              "http",
 					Token:                   "",
@@ -128,7 +144,7 @@ func TestMakeGitlabConfig(t *testing.T) {
 					IncludeCurrentUser:      true,
 				},
 			},
-			expected: &gitlab.GitlabClientConfig{
+			expected: &config.GitlabClientConfig{
 				URL:                     "https://gitlab.com",
 				PullMethod:              "http",
 				Token:                   "",
@@ -140,7 +156,10 @@ func TestMakeGitlabConfig(t *testing.T) {
 		},
 		"InvalidPullMethod": {
 			input: &config.Config{
-				Gitlab: gitlab.GitlabClientConfig{
+				FS: config.FSConfig{
+					Platform: "gitlab",
+				},
+				Gitlab: config.GitlabClientConfig{
 					URL:                     "https://gitlab.com",
 					PullMethod:              "invalid",
 					Token:                   "",
@@ -154,7 +173,7 @@ func TestMakeGitlabConfig(t *testing.T) {
 		},
 		"InvalidArchiveHandling": {
 			input: &config.Config{
-				Gitlab: gitlab.GitlabClientConfig{
+				Gitlab: config.GitlabClientConfig{
 					URL:                     "https://gitlab.com",
 					PullMethod:              "http",
 					Token:                   "",
