@@ -18,7 +18,7 @@ func TestLoadConfig(t *testing.T) {
 				FS: config.FSConfig{
 					Mountpoint:   "/tmp/gitlabfs/test/mnt/gitlab",
 					MountOptions: "nodev",
-					Platform:     "gitlab",
+					Forge:        "gitlab",
 				},
 				Gitlab: config.GitlabClientConfig{
 					URL:                     "https://example.com",
@@ -70,7 +70,7 @@ func TestMakeGitConfig(t *testing.T) {
 		"ValidConfig": {
 			input: &config.Config{
 				FS: config.FSConfig{
-					Platform: "gitlab",
+					Forge: "gitlab",
 				},
 				Git: config.GitClientConfig{
 					CloneLocation:    "/tmp",
@@ -95,7 +95,7 @@ func TestMakeGitConfig(t *testing.T) {
 		"InvalidOnClone": {
 			input: &config.Config{
 				FS: config.FSConfig{
-					Platform: "gitlab",
+					Forge: "gitlab",
 				},
 				Git: config.GitClientConfig{
 					CloneLocation:    "/tmp",
@@ -132,7 +132,7 @@ func TestMakeGitlabConfig(t *testing.T) {
 		"ValidConfig": {
 			input: &config.Config{
 				FS: config.FSConfig{
-					Platform: "gitlab",
+					Forge: "gitlab",
 				},
 				Gitlab: config.GitlabClientConfig{
 					URL:                     "https://gitlab.com",
@@ -157,7 +157,7 @@ func TestMakeGitlabConfig(t *testing.T) {
 		"InvalidPullMethod": {
 			input: &config.Config{
 				FS: config.FSConfig{
-					Platform: "gitlab",
+					Forge: "gitlab",
 				},
 				Gitlab: config.GitlabClientConfig{
 					URL:                     "https://gitlab.com",

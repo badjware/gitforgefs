@@ -26,14 +26,14 @@ type GitClient interface {
 	FetchLocalRepositoryPath(source RepositorySource) (string, error)
 }
 
-type GitPlatform interface {
+type GitForge interface {
 	FetchRootGroupContent() (map[string]GroupSource, error)
 	FetchGroupContent(gid uint64) (map[string]GroupSource, map[string]RepositorySource, error)
 }
 
 type FSParam struct {
-	GitClient   GitClient
-	GitPlatform GitPlatform
+	GitClient GitClient
+	GitForge  GitForge
 
 	logger        *slog.Logger
 	staticInoChan chan uint64
@@ -77,7 +77,7 @@ func Start(logger *slog.Logger, mountpoint string, mountoptions []string, param 
 }
 
 func (n *rootNode) OnAdd(ctx context.Context) {
-	rootGroups, err := n.param.GitPlatform.FetchRootGroupContent()
+	rootGroups, err := n.param.GitForge.FetchRootGroupContent()
 	if err != nil {
 		panic(err)
 	}
