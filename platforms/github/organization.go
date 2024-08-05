@@ -62,6 +62,7 @@ func (c *githubClient) fetchOrganization(org_name string) (*Organization, error)
 	// save in cache
 	c.organizationCacheMux.Lock()
 	c.organizationCache[newOrg.ID] = &newOrg
+	c.organizationNameToIDMap[newOrg.Name] = newOrg.ID
 	c.organizationCacheMux.Unlock()
 
 	return &newOrg, nil
