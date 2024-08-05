@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -47,6 +48,14 @@ func NewClient(logger *slog.Logger, config config.GithubClientConfig) (*githubCl
 		userCache:               map[int64]*User{},
 	}
 
+	// Fetch current user and add it to the list
+	currentUser, _, err := client.Users.Get(context.Background(), "")
+	if err != nil {
+		logger.Warn("failed to fetch the current user:", "error", err.Error())
+	} else {
+		gitHubClient.UserNames = append(gitHubClient.UserNames, *currentUser.Login)
+	}
+
 	return gitHubClient, nil
 }
 
@@ -71,7 +80,6 @@ func (c *githubClient) FetchRootGroupContent() (map[string]fstree.GroupSource, e
 				rootContent[user.Name] = user
 			}
 		}
-		// TODO: user + current user
 
 		c.rootContent = rootContent
 	}
