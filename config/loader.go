@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	PlatformGitlab = "gitlab"
-	PlatformGithub = "github"
+	ForgeGitlab = "gitlab"
+	ForgeGithub = "github"
 
 	PullMethodHTTP = "http"
 	PullMethodSSH  = "ssh"
@@ -30,7 +30,7 @@ type (
 	FSConfig struct {
 		Mountpoint   string `yaml:"mountpoint,omitempty"`
 		MountOptions string `yaml:"mountoptions,omitempty"`
-		Platform     string `yaml:"platform,omitempty"`
+		Forge        string `yaml:"forge,omitempty"`
 	}
 	GitlabClientConfig struct {
 		URL   string `yaml:"url,omitempty"`
@@ -76,7 +76,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		FS: FSConfig{
 			Mountpoint:   "",
 			MountOptions: "nodev,nosuid",
-			Platform:     "",
+			Forge:        "",
 		},
 		Gitlab: GitlabClientConfig{
 			URL:                     "https://gitlab.com",
@@ -119,9 +119,9 @@ func LoadConfig(configPath string) (*Config, error) {
 		}
 	}
 
-	// validate platform is set
-	if config.FS.Platform != PlatformGithub && config.FS.Platform != PlatformGitlab {
-		return nil, fmt.Errorf("fs.platform must be either \"%v\", or \"%v\"", PlatformGitlab, PlatformGithub)
+	// validate forge is set
+	if config.FS.Forge != ForgeGithub && config.FS.Forge != ForgeGitlab {
+		return nil, fmt.Errorf("fs.forge must be either \"%v\", or \"%v\"", ForgeGitlab, ForgeGithub)
 	}
 
 	return config, nil

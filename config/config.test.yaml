@@ -1,7 +1,7 @@
 fs:
   mountpoint: /tmp/gitlabfs/test/mnt/gitlab
   mountoptions: nodev
-  platform: gitlab
+  forge: gitlab
 
 gitlab:
   url: https://example.com

@@ -6,9 +6,9 @@ fs:
   # See mount.fuse(8) for the full list of options.
   #mountoptions: nodev,nosuid
 
-  # The git platform to use as the backend.
-  # Must be one of "gitlab", or "github"
-  platform: gitlab
+  # The git forge to use as the backend.
+  # Must be one of "gitlab" or "github"
+  forge: gitlab
 
 gitlab:
   # The gitlab url.
