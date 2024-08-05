@@ -64,23 +64,6 @@ func (c *gitlabClient) fetchUser(uid int) (*User, error) {
 	return &newUser, nil
 }
 
-func (c *gitlabClient) fetchCurrentUser() (*User, error) {
-	if c.currentUserCache == nil {
-		gitlabUser, _, err := c.client.Users.CurrentUser()
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch current user: %v", err)
-		}
-		newUser := User{
-			ID:   gitlabUser.ID,
-			Name: gitlabUser.Username,
-
-			childProjects: nil,
-		}
-		c.currentUserCache = &newUser
-	}
-	return c.currentUserCache, nil
-}
-
 func (c *gitlabClient) fetchUserContent(user *User) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	// Only a single routine can fetch the user content at the time.
 	// We lock for the whole duration of the function to avoid fetching the same data from the API

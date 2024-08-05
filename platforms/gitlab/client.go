@@ -17,9 +17,7 @@ type gitlabClient struct {
 
 	logger *slog.Logger
 
-	// root group cache
-	rootGroupCache   map[string]fstree.GroupSource
-	currentUserCache *User
+	rootContent map[string]fstree.GroupSource
 
 	// API response cache
 	groupCacheMux sync.RWMutex
@@ -43,18 +41,26 @@ func NewClient(logger *slog.Logger, config config.GitlabClientConfig) (*gitlabCl
 
 		logger: logger,
 
-		rootGroupCache:   nil,
-		currentUserCache: nil,
+		rootContent: nil,
 
 		groupCache: map[int]*Group{},
 		userCache:  map[int]*User{},
 	}
+
+	// Fetch current user and add it to the list
+	currentUser, _, err := client.Users.CurrentUser()
+	if err != nil {
+		logger.Warn("failed to fetch the current user:", "error", err.Error())
+	} else {
+		gitlabClient.UserIDs = append(gitlabClient.UserIDs, currentUser.ID)
+	}
+
 	return gitlabClient, nil
 }
 
 func (c *gitlabClient) FetchRootGroupContent() (map[string]fstree.GroupSource, error) {
 	// use cached values if available
-	if c.rootGroupCache == nil {
+	if c.rootContent == nil {
 		rootGroupCache := make(map[string]fstree.GroupSource)
 
 		// fetch root groups
@@ -73,23 +79,14 @@ func (c *gitlabClient) FetchRootGroupContent() (map[string]fstree.GroupSource, e
 			}
 			rootGroupCache[user.Name] = user
 		}
-		// fetch current user if configured
-		if c.IncludeCurrentUser {
-			currentUser, err := c.fetchCurrentUser()
-			if err != nil {
-				c.logger.Warn(err.Error())
-			} else {
-				rootGroupCache[currentUser.Name] = currentUser
-			}
-		}
 
-		c.rootGroupCache = rootGroupCache
+		c.rootContent = rootGroupCache
 	}
-	return c.rootGroupCache, nil
+	return c.rootContent, nil
 }
 
 func (c *gitlabClient) FetchGroupContent(gid uint64) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
-	if slices.Contains[[]int, int](c.UserIDs, int(gid)) || (c.currentUserCache != nil && c.currentUserCache.ID == int(gid)) {
+	if slices.Contains[[]int, int](c.UserIDs, int(gid)) {
 		// gid is a user
 		user, err := c.fetchUser(int(gid))
 		if err != nil {
