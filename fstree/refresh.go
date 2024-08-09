@@ -23,7 +23,7 @@ var _ = (fs.NodeOpener)((*refreshNode)(nil))
 
 func newRefreshNode(source GroupSource, param *FSParam) *refreshNode {
 	return &refreshNode{
-		ino:    <-param.staticInoChan,
+		ino:    0,
 		source: source,
 	}
 }

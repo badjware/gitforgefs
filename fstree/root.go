@@ -12,10 +12,6 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
-const (
-	staticInodeStart = uint64(int(^(uint(0))>>1)) + 1
-)
-
 type staticNode interface {
 	fs.InodeEmbedder
 	Ino() uint64
@@ -35,8 +31,7 @@ type FSParam struct {
 	GitClient GitClient
 	GitForge  GitForge
 
-	logger        *slog.Logger
-	staticInoChan chan uint64
+	logger *slog.Logger
 }
 
 type rootNode struct {
@@ -54,12 +49,9 @@ func Start(logger *slog.Logger, mountpoint string, mountoptions []string, param 
 	opts.Debug = debug
 
 	param.logger = logger
-	param.staticInoChan = make(chan uint64)
 	root := &rootNode{
 		param: param,
 	}
-
-	go staticInoGenerator(root.param.staticInoChan)
 
 	server, err := fs.Mount(mountpoint, root, opts)
 	if err != nil {
@@ -88,7 +80,7 @@ func (n *rootNode) OnAdd(ctx context.Context) {
 			ctx,
 			groupNode,
 			fs.StableAttr{
-				Ino:  <-n.param.staticInoChan,
+				Ino:  0,
 				Mode: fuse.S_IFDIR,
 			},
 		)
@@ -96,14 +88,6 @@ func (n *rootNode) OnAdd(ctx context.Context) {
 	}
 
 	n.param.logger.Info("Mounted and ready to use")
-}
-
-func staticInoGenerator(staticInoChan chan<- uint64) {
-	i := staticInodeStart
-	for {
-		staticInoChan <- i
-		i++
-	}
 }
 
 func signalHandler(logger *slog.Logger, signalChan <-chan os.Signal, server *fuse.Server) {
