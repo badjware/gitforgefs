@@ -11,6 +11,7 @@ import (
 const (
 	ForgeGitlab = "gitlab"
 	ForgeGithub = "github"
+	ForgeGitea  = "gitea"
 
 	PullMethodHTTP = "http"
 	PullMethodSSH  = "ssh"
@@ -25,6 +26,7 @@ type (
 		FS     FSConfig           `yaml:"fs,omitempty"`
 		Gitlab GitlabClientConfig `yaml:"gitlab,omitempty"`
 		Github GithubClientConfig `yaml:"github,omitempty"`
+		Gitea  GiteaClientConfig  `yaml:"gitea,omitempty"`
 		Git    GitClientConfig    `yaml:"git,omitempty"`
 	}
 	FSConfig struct {
@@ -44,6 +46,17 @@ type (
 		PullMethod              string `yaml:"pull_method,omitempty"`
 	}
 	GithubClientConfig struct {
+		Token string `yaml:"token,omitempty"`
+
+		OrgNames  []string `yaml:"org_names,omitempty"`
+		UserNames []string `yaml:"user_names,omitempty"`
+
+		ArchivedRepoHandling string `yaml:"archived_repo_handling,omitempty"`
+		IncludeCurrentUser   bool   `yaml:"include_current_user,omitempty"`
+		PullMethod           string `yaml:"pull_method,omitempty"`
+	}
+	GiteaClientConfig struct {
+		URL   string `yaml:"url,omitempty"`
 		Token string `yaml:"token,omitempty"`
 
 		OrgNames  []string `yaml:"org_names,omitempty"`
@@ -120,8 +133,8 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 
 	// validate forge is set
-	if config.FS.Forge != ForgeGithub && config.FS.Forge != ForgeGitlab {
-		return nil, fmt.Errorf("fs.forge must be either \"%v\", or \"%v\"", ForgeGitlab, ForgeGithub)
+	if config.FS.Forge != ForgeGithub && config.FS.Forge != ForgeGitlab && config.FS.Forge != ForgeGitea {
+		return nil, fmt.Errorf("fs.forge must be either \"%v\", \"%v\", or \"%v\"", ForgeGitlab, ForgeGithub, ForgeGitea)
 	}
 
 	return config, nil
@@ -143,16 +156,30 @@ func MakeGitlabConfig(config *Config) (*GitlabClientConfig, error) {
 
 func MakeGithubConfig(config *Config) (*GithubClientConfig, error) {
 	// parse pull_method
-	if config.Gitlab.PullMethod != PullMethodHTTP && config.Gitlab.PullMethod != PullMethodSSH {
+	if config.Github.PullMethod != PullMethodHTTP && config.Github.PullMethod != PullMethodSSH {
 		return nil, fmt.Errorf("github.pull_method must be either \"%v\" or \"%v\"", PullMethodHTTP, PullMethodSSH)
 	}
 
 	// parse archive_handing
-	if config.Gitlab.ArchivedProjectHandling != ArchivedProjectShow && config.Gitlab.ArchivedProjectHandling != ArchivedProjectHide && config.Gitlab.ArchivedProjectHandling != ArchivedProjectIgnore {
+	if config.Github.ArchivedRepoHandling != ArchivedProjectShow && config.Github.ArchivedRepoHandling != ArchivedProjectHide && config.Github.ArchivedRepoHandling != ArchivedProjectIgnore {
 		return nil, fmt.Errorf("github.archived_repo_handling must be either \"%v\", \"%v\" or \"%v\"", ArchivedProjectShow, ArchivedProjectHide, ArchivedProjectIgnore)
 	}
 
 	return &config.Github, nil
+}
+
+func MakeGiteaConfig(config *Config) (*GiteaClientConfig, error) {
+	// parse pull_method
+	if config.Gitea.PullMethod != PullMethodHTTP && config.Gitea.PullMethod != PullMethodSSH {
+		return nil, fmt.Errorf("gitea.pull_method must be either \"%v\" or \"%v\"", PullMethodHTTP, PullMethodSSH)
+	}
+
+	// parse archive_handing
+	if config.Gitea.ArchivedRepoHandling != ArchivedProjectShow && config.Gitea.ArchivedRepoHandling != ArchivedProjectHide && config.Gitea.ArchivedRepoHandling != ArchivedProjectIgnore {
+		return nil, fmt.Errorf("gitea.archived_repo_handling must be either \"%v\", \"%v\" or \"%v\"", ArchivedProjectShow, ArchivedProjectHide, ArchivedProjectIgnore)
+	}
+
+	return &config.Gitea, nil
 }
 
 func MakeGitConfig(config *Config) (*GitClientConfig, error) {
