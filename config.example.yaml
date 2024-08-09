@@ -7,7 +7,7 @@ fs:
   #mountoptions: nodev,nosuid
 
   # The git forge to use as the backend.
-  # Must be one of "gitlab" or "github"
+  # Must be one of "gitlab", "github", or "gitea"
   forge: gitlab
 
 gitlab:
@@ -69,6 +69,36 @@ github:
   # will be automatically be added to the list of users exposed by the filesystem.
   include_current_user: true
 
+gitea:
+  # The gitea url.
+  url: https://gitea.com
+
+  # The gitlab api token
+  # Default to anonymous (only public repositories will be visible)
+  #token:
+
+  # Must be set to either "http" or "ssh".
+  # The protocol to configure the git remote on.
+  # "http" may not work on private repositories unless a credential manager is configured
+  # If possible, prefer "ssh" over "http"
+  pull_method: http
+
+  # A list of the name of the organizations to expose in the filesystem
+  org_names: []
+
+  # A list of the name of the user to expose their repositories un the filesystem
+  user_names: []
+
+  # Set how archived repositories are handled.
+  # If set to "show", it will add them to the filesystem and treat them like any other repository
+  # If set to "hide", it will add them to the filesystem, but prefix the symlink with a "."
+  # If set to "ignore", it will make them absent from the filesystem
+  # Default to "hide"
+  archived_repo_handling: hide
+
+  # If set to true, the personal repositories and the repositories of the organizations the user the api token belongs to
+  # will be automatically be added to the list of users exposed by the filesystem.
+  include_current_user: true
 
 git:
   # Path to the local repository cache. Repositories in the filesystem will symlink to a folder in this path.

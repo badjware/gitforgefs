@@ -24,6 +24,17 @@ github:
   archived_repo_handling: hide
   include_current_user: true
 
+gitea:
+  url: https://example.com
+  token: "12345"
+  pull_method: http
+  org_names: 
+    - test-org
+  user_names:
+    - test-user
+  archived_repo_handling: hide
+  include_current_user: true
+
 git:
   clone_location: /tmp/gitlabfs/test/cache/gitlab
   remote: origin

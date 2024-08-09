@@ -37,6 +37,15 @@ func TestLoadConfig(t *testing.T) {
 					ArchivedRepoHandling: "hide",
 					IncludeCurrentUser:   true,
 				},
+				Gitea: config.GiteaClientConfig{
+					URL:                  "https://example.com",
+					Token:                "12345",
+					PullMethod:           "http",
+					OrgNames:             []string{"test-org"},
+					UserNames:            []string{"test-user"},
+					ArchivedRepoHandling: "hide",
+					IncludeCurrentUser:   true,
+				},
 				Git: config.GitClientConfig{
 					CloneLocation:    "/tmp/gitlabfs/test/cache/gitlab",
 					Remote:           "origin",

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/badjware/gitlabfs/config"
+	"github.com/badjware/gitlabfs/forges/gitea"
 	"github.com/badjware/gitlabfs/forges/github"
 	"github.com/badjware/gitlabfs/forges/gitlab"
 	"github.com/badjware/gitlabfs/fstree"
@@ -68,20 +69,28 @@ func main() {
 	var gitForgeClient fstree.GitForge
 	if loadedConfig.FS.Forge == config.ForgeGitlab {
 		// Create the gitlab client
-		GitlabClientConfig, err := config.MakeGitlabConfig(loadedConfig)
+		gitlabClientConfig, err := config.MakeGitlabConfig(loadedConfig)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		gitForgeClient, _ = gitlab.NewClient(logger, *GitlabClientConfig)
+		gitForgeClient, _ = gitlab.NewClient(logger, *gitlabClientConfig)
 	} else if loadedConfig.FS.Forge == config.ForgeGithub {
 		// Create the github client
-		GithubClientConfig, err := config.MakeGithubConfig(loadedConfig)
+		githubClientConfig, err := config.MakeGithubConfig(loadedConfig)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		gitForgeClient, _ = github.NewClient(logger, *GithubClientConfig)
+		gitForgeClient, _ = github.NewClient(logger, *githubClientConfig)
+	} else if loadedConfig.FS.Forge == config.ForgeGitea {
+		// Create the gitea client
+		giteaClientConfig, err := config.MakeGiteaConfig(loadedConfig)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		gitForgeClient, _ = gitea.NewClient(logger, *giteaClientConfig)
 	}
 
 	// Start the filesystem
