@@ -63,8 +63,8 @@ func (c *githubClient) FetchRootGroupContent() (map[string]fstree.GroupSource, e
 	if c.rootContent == nil {
 		rootContent := make(map[string]fstree.GroupSource)
 
-		for _, org_name := range c.GithubClientConfig.OrgNames {
-			org, err := c.fetchOrganization(org_name)
+		for _, orgName := range c.GithubClientConfig.OrgNames {
+			org, err := c.fetchOrganization(orgName)
 			if err != nil {
 				c.logger.Warn(err.Error())
 			} else {
@@ -72,8 +72,8 @@ func (c *githubClient) FetchRootGroupContent() (map[string]fstree.GroupSource, e
 			}
 		}
 
-		for _, user_name := range c.GithubClientConfig.UserNames {
-			user, err := c.fetchUser(user_name)
+		for _, userName := range c.GithubClientConfig.UserNames {
+			user, err := c.fetchUser(userName)
 			if err != nil {
 				c.logger.Warn(err.Error())
 			} else {
