@@ -8,6 +8,10 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
+const (
+	groupBaseInode = 1_000_000_000
+)
+
 type groupNode struct {
 	fs.Inode
 	param *FSParam
@@ -48,14 +52,14 @@ func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 	for groupName, group := range groups {
 		entries = append(entries, fuse.DirEntry{
 			Name: groupName,
-			Ino:  group.GetGroupID(),
+			Ino:  group.GetGroupID() + groupBaseInode,
 			Mode: fuse.S_IFDIR,
 		})
 	}
 	for repositoryName, repository := range repositories {
 		entries = append(entries, fuse.DirEntry{
 			Name: repositoryName,
-			Ino:  repository.GetRepositoryID(),
+			Ino:  repository.GetRepositoryID() + repositoryBaseInode,
 			Mode: fuse.S_IFLNK,
 		})
 	}
@@ -78,7 +82,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		group, found := groups[name]
 		if found {
 			attrs := fs.StableAttr{
-				Ino:  group.GetGroupID(),
+				Ino:  group.GetGroupID() + groupBaseInode,
 				Mode: fuse.S_IFDIR,
 			}
 			groupNode, _ := newGroupNodeFromSource(group, n.param)
@@ -89,7 +93,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		repository, found := repositories[name]
 		if found {
 			attrs := fs.StableAttr{
-				Ino:  repository.GetRepositoryID(),
+				Ino:  repository.GetRepositoryID() + repositoryBaseInode,
 				Mode: fuse.S_IFLNK,
 			}
 			repositoryNode, _ := newRepositoryNodeFromSource(repository, n.param)
