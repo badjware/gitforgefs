@@ -45,7 +45,7 @@ func (c *gitlabClient) fetchUser(uid int) (*User, error) {
 	}
 
 	// If not found in cache, fetch group infos from API
-	gitlabUser, _, err := c.client.Users.GetUser(uid)
+	gitlabUser, _, err := c.client.Users.GetUser(uid, gitlab.GetUsersOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user with id %v: %v", uid, err)
 	}

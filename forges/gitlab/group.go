@@ -56,7 +56,7 @@ func (c *gitlabClient) fetchGroup(gid int) (*Group, error) {
 	}
 
 	// If not in cache, fetch group infos from API
-	gitlabGroup, _, err := c.client.Groups.GetGroup(gid)
+	gitlabGroup, _, err := c.client.Groups.GetGroup(gid, &gitlab.GetGroupOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch group with id %v: %v", gid, err)
 	}
@@ -127,15 +127,15 @@ func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupS
 		childProjects := make(map[string]fstree.RepositorySource)
 
 		// List subgroups in path
-		ListGroupsOpt := &gitlab.ListSubgroupsOptions{
+		listGroupsOpt := &gitlab.ListSubGroupsOptions{
 			ListOptions: gitlab.ListOptions{
 				Page:    1,
 				PerPage: 100,
 			},
-			AllAvailable: gitlab.Bool(true),
+			AllAvailable: gitlab.Ptr(true),
 		}
 		for {
-			gitlabGroups, response, err := c.client.Groups.ListSubgroups(group.ID, ListGroupsOpt)
+			gitlabGroups, response, err := c.client.Groups.ListSubGroups(group.ID, listGroupsOpt)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to fetch groups in gitlab: %v", err)
 			}
@@ -147,7 +147,7 @@ func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupS
 				break
 			}
 			// Get the next page
-			ListGroupsOpt.Page = response.NextPage
+			listGroupsOpt.Page = response.NextPage
 		}
 
 		// List projects in path
