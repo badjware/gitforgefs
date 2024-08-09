@@ -31,26 +31,26 @@ func (o *Organization) InvalidateContentCache() {
 	o.childRepositories = nil
 }
 
-func (c *githubClient) fetchOrganization(org_name string) (*Organization, error) {
+func (c *githubClient) fetchOrganization(orgName string) (*Organization, error) {
 	c.organizationCacheMux.RLock()
-	cachedId, found := c.organizationNameToIDMap[org_name]
+	cachedId, found := c.organizationNameToIDMap[orgName]
 	if found {
 		cachedOrg := c.organizationCache[cachedId]
 		c.organizationCacheMux.RUnlock()
 
 		// if found in cache, return the cached reference
-		c.logger.Debug("Organization cache hit", "org_name", org_name)
+		c.logger.Debug("Organization cache hit", "org_name", orgName)
 		return cachedOrg, nil
 	} else {
 		c.organizationCacheMux.RUnlock()
 
-		c.logger.Debug("Organization cache miss", "org_name", org_name)
+		c.logger.Debug("Organization cache miss", "org_name", orgName)
 	}
 
 	// If not found in cache, fetch organization infos from API
-	githubOrg, _, err := c.client.Organizations.Get(context.Background(), org_name)
+	githubOrg, _, err := c.client.Organizations.Get(context.Background(), orgName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch organization with name %v: %v", org_name, err)
+		return nil, fmt.Errorf("failed to fetch organization with name %v: %v", orgName, err)
 	}
 	newOrg := Organization{
 		ID:   *githubOrg.ID,

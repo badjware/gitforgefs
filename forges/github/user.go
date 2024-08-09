@@ -31,26 +31,26 @@ func (u *User) InvalidateContentCache() {
 	u.childRepositories = nil
 }
 
-func (c *githubClient) fetchUser(user_name string) (*User, error) {
+func (c *githubClient) fetchUser(userName string) (*User, error) {
 	c.userCacheMux.RLock()
-	cachedId, found := c.userNameToIDMap[user_name]
+	cachedId, found := c.userNameToIDMap[userName]
 	if found {
 		cachedUser := c.userCache[cachedId]
 		c.userCacheMux.RUnlock()
 
 		// if found in cache, return the cached reference
-		c.logger.Debug("User cache hit", "user_name", user_name)
+		c.logger.Debug("User cache hit", "user_name", userName)
 		return cachedUser, nil
 	} else {
 		c.userCacheMux.RUnlock()
 
-		c.logger.Debug("User cache miss", "user_name", user_name)
+		c.logger.Debug("User cache miss", "user_name", userName)
 	}
 
 	// If not found in cache, fetch user infos from API
-	githubUser, _, err := c.client.Users.Get(context.Background(), user_name)
+	githubUser, _, err := c.client.Users.Get(context.Background(), userName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch user with name %v: %v", user_name, err)
+		return nil, fmt.Errorf("failed to fetch user with name %v: %v", userName, err)
 	}
 	newUser := User{
 		ID:   *githubUser.ID,
