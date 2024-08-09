@@ -80,7 +80,7 @@ func (n *rootNode) OnAdd(ctx context.Context) {
 			ctx,
 			groupNode,
 			fs.StableAttr{
-				Ino:  0,
+				Ino:  group.GetGroupID() + groupBaseInode,
 				Mode: fuse.S_IFDIR,
 			},
 		)
