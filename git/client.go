@@ -41,7 +41,7 @@ func NewClient(logger *slog.Logger, p config.GitClientConfig) (*gitClient, error
 
 		logger: logger,
 
-		hostnameProg: regexp.MustCompile(`([a-z0-1:\-]+\.)+[a-z0-1:\-]+`),
+		hostnameProg: regexp.MustCompile(`([a-z0-1\-]+\.)+[a-z0-1\-]+`),
 
 		queue: queueFactory.RegisterQueue(&taskq.QueueOptions{
 			Name:         "git-queue",
