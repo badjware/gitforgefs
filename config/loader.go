@@ -38,8 +38,8 @@ type (
 		URL   string `yaml:"url,omitempty"`
 		Token string `yaml:"token,omitempty"`
 
-		GroupIDs []int `yaml:"group_ids,omitempty"`
-		UserIDs  []int `yaml:"user_ids,omitempty"`
+		GroupIDs  []int    `yaml:"group_ids,omitempty"`
+		UserNames []string `yaml:"user_names,omitempty"`
 
 		ArchivedProjectHandling string `yaml:"archived_project_handling,omitempty"`
 		IncludeCurrentUser      bool   `yaml:"include_current_user,omitempty"`
@@ -96,7 +96,7 @@ func LoadConfig(configPath string) (*Config, error) {
 			Token:                   "",
 			PullMethod:              "http",
 			GroupIDs:                []int{9970},
-			UserIDs:                 []int{},
+			UserNames:               []string{},
 			ArchivedProjectHandling: "hide",
 			IncludeCurrentUser:      true,
 		},

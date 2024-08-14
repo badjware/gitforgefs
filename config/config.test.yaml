@@ -9,8 +9,8 @@ gitlab:
   pull_method: ssh
   group_ids:
     - 123
-  user_ids:
-    - 456
+  user_names:
+    - test-user
   archived_project_handling: hide
   include_current_user: true
 

@@ -28,8 +28,8 @@ gitlab:
   group_ids:
     - 9970 # gitlab-org
 
-  # A list of the user ids to expose their personal projects in the filesystem.
-  user_ids: []
+  # A list of the name of the user to expose their repositories un the filesystem
+  user_names: []
 
   # Set how archived projects are handled.
   # If set to "show", it will add them to the filesystem and treat them like any other project
