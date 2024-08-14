@@ -4,7 +4,7 @@ import (
 	"path"
 
 	"code.gitea.io/sdk/gitea"
-	"github.com/badjware/gitlabfs/config"
+	"github.com/badjware/gitforgefs/config"
 )
 
 type Repository struct {

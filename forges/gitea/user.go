@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"code.gitea.io/sdk/gitea"
-	"github.com/badjware/gitlabfs/fstree"
+	"github.com/badjware/gitforgefs/fstree"
 )
 
 type User struct {

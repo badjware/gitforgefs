@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/badjware/gitlabfs/config"
-	"github.com/badjware/gitlabfs/fstree"
-	"github.com/badjware/gitlabfs/utils"
+	"github.com/badjware/gitforgefs/config"
+	"github.com/badjware/gitforgefs/fstree"
+	"github.com/badjware/gitforgefs/utils"
 	"github.com/vmihailenco/taskq/v3"
 	"github.com/vmihailenco/taskq/v3/memqueue"
 )

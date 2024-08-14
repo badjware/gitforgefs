@@ -83,7 +83,7 @@ func LoadConfig(configPath string) (*Config, error) {
 	if dataHome == "" {
 		dataHome = filepath.Join(os.Getenv("HOME"), ".local/share")
 	}
-	defaultCloneLocation := filepath.Join(dataHome, "gitlabfs")
+	defaultCloneLocation := filepath.Join(dataHome, "gitforgefs")
 
 	config := &Config{
 		FS: FSConfig{

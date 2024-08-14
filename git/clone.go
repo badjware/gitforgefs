@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/badjware/gitlabfs/utils"
+	"github.com/badjware/gitforgefs/utils"
 )
 
 func (c *gitClient) clone(url string, defaultBranch string, dst string) error {

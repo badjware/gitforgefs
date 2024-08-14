@@ -7,12 +7,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/badjware/gitlabfs/config"
-	"github.com/badjware/gitlabfs/forges/gitea"
-	"github.com/badjware/gitlabfs/forges/github"
-	"github.com/badjware/gitlabfs/forges/gitlab"
-	"github.com/badjware/gitlabfs/fstree"
-	"github.com/badjware/gitlabfs/git"
+	"github.com/badjware/gitforgefs/config"
+	"github.com/badjware/gitforgefs/forges/gitea"
+	"github.com/badjware/gitforgefs/forges/github"
+	"github.com/badjware/gitforgefs/forges/gitlab"
+	"github.com/badjware/gitforgefs/fstree"
+	"github.com/badjware/gitforgefs/git"
 )
 
 func main() {

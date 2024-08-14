@@ -1,4 +1,4 @@
-module github.com/badjware/gitlabfs
+module github.com/badjware/gitforgefs
 
 go 1.21
 
