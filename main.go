@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	configPath := flag.String("config", "", "The config file")
+	configPath := flag.String("config", "config.yaml", "The config file")
 	mountoptionsFlag := flag.String("o", "", "Filesystem mount options. See mount.fuse(8)")
 	debug := flag.Bool("debug", false, "Enable debug logging")
 

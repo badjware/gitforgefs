@@ -119,17 +119,15 @@ func LoadConfig(configPath string) (*Config, error) {
 		},
 	}
 
-	if configPath != "" {
-		f, err := os.Open(configPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open config file: %v", err)
-		}
-		defer f.Close()
+	f, err := os.Open(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open config file: %v", err)
+	}
+	defer f.Close()
 
-		d := yaml.NewDecoder(f)
-		if err := d.Decode(config); err != nil {
-			return nil, fmt.Errorf("failed to parse config file: %v", err)
-		}
+	d := yaml.NewDecoder(f)
+	if err := d.Decode(config); err != nil {
+		return nil, fmt.Errorf("failed to parse config file: %v", err)
 	}
 
 	// validate forge is set
