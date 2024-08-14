@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/badjware/gitlabfs/config"
+	"github.com/badjware/gitforgefs/config"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -16,7 +16,7 @@ func TestLoadConfig(t *testing.T) {
 			input: "config.test.yaml",
 			expected: &config.Config{
 				FS: config.FSConfig{
-					Mountpoint:   "/tmp/gitlabfs/test/mnt/gitlab",
+					Mountpoint:   "/tmp/gitforgefs/test/mnt/gitlab",
 					MountOptions: "nodev",
 					Forge:        "gitlab",
 				},
@@ -47,7 +47,7 @@ func TestLoadConfig(t *testing.T) {
 					IncludeCurrentUser:   true,
 				},
 				Git: config.GitClientConfig{
-					CloneLocation:    "/tmp/gitlabfs/test/cache/gitlab",
+					CloneLocation:    "/tmp/gitforgefs/test/cache/gitlab",
 					Remote:           "origin",
 					OnClone:          "clone",
 					AutoPull:         false,

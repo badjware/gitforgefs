@@ -3,7 +3,7 @@ package gitlab
 import (
 	"path"
 
-	"github.com/badjware/gitlabfs/config"
+	"github.com/badjware/gitforgefs/config"
 	"github.com/xanzy/go-gitlab"
 )
 

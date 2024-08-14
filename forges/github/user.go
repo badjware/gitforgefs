@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/badjware/gitlabfs/fstree"
+	"github.com/badjware/gitforgefs/fstree"
 	"github.com/google/go-github/v63/github"
 )
 

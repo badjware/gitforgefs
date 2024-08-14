@@ -102,7 +102,7 @@ gitea:
 
 git:
   # Path to the local repository cache. Repositories in the filesystem will symlink to a folder in this path.
-  # Default to $XDG_DATA_HOME/gitlabfs, or $HOME/.local/share/gitlabfs if the environment variable $XDG_DATA_HOME is unset.
+  # Default to $XDG_DATA_HOME/gitforgefs, or $HOME/.local/share/gitforgefs if the environment variable $XDG_DATA_HOME is unset.
   #clone_location:
 
   # The name of the remote in the local clone.

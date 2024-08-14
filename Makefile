@@ -1,4 +1,4 @@
-PROGRAM    := gitlabfs
+PROGRAM    := gitforgefs
 TARGET_DIR := ./bin
 VERSION    := $(shell git describe --tags --always)
 

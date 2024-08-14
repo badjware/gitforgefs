@@ -3,7 +3,7 @@ package github
 import (
 	"path"
 
-	"github.com/badjware/gitlabfs/config"
+	"github.com/badjware/gitforgefs/config"
 	"github.com/google/go-github/v63/github"
 )
 

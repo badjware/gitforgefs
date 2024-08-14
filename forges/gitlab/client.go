@@ -6,8 +6,8 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/badjware/gitlabfs/config"
-	"github.com/badjware/gitlabfs/fstree"
+	"github.com/badjware/gitforgefs/config"
+	"github.com/badjware/gitforgefs/fstree"
 	"github.com/xanzy/go-gitlab"
 )
 

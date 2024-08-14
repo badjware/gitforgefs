@@ -1,5 +1,5 @@
 fs:
-  mountpoint: /tmp/gitlabfs/test/mnt/gitlab
+  mountpoint: /tmp/gitforgefs/test/mnt/gitlab
   mountoptions: nodev
   forge: gitlab
 
@@ -36,7 +36,7 @@ gitea:
   include_current_user: true
 
 git:
-  clone_location: /tmp/gitlabfs/test/cache/gitlab
+  clone_location: /tmp/gitforgefs/test/cache/gitlab
   remote: origin
   on_clone: clone
   auto_pull: false
