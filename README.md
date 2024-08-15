@@ -52,7 +52,7 @@ Merge requests to add support to other forges are welcome.
 
 Install [go](https://golang.org/) and run
 ``` sh
-go install github.com/badjware/gitforgefs
+go install github.com/badjware/gitforgefs@latest
 ```
 
 The executable will be in `$GOPATH/bin/gitforgefs` or `~/go/bin/gitforgefs` by default. For convenience, add `~/go/bin` in your `$PATH` if not done already.
