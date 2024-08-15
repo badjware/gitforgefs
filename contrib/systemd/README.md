@@ -5,7 +5,7 @@ This unit file allows you to automatically start gitforgefs as a systemd unit.
 2. Copy **gitforgefs@.service** into **$HOME/.config/systemd/user**. Create the folder if it does not exists.
 ``` sh
 mkdir -p $HOME/.config/systemd/user
-curl -o $HOME/.config/systemd/user/gitforgefs@.service https://raw.githubusercontent.com/badjware/gitlabfs/dev/contrib/systemd/gitforgefs%40.service
+curl -o $HOME/.config/systemd/user/gitforgefs@.service https://raw.githubusercontent.com/badjware/gitforgefs/dev/contrib/systemd/gitforgefs%40.service
 ```
 3. Reload systemd: `systemctl --user daemon-reload`
 

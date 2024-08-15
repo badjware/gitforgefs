@@ -1,5 +1,5 @@
 [Unit]
-Description=FUSE filesystem for gitlab groups and projects (%i)
+Description=A FUSE filesystem to automatically organize git reposistories from a git forge (%i)
 Wants=network-online.target
 After=network-online.target
 
