@@ -32,6 +32,7 @@ type (
 	FSConfig struct {
 		Mountpoint   string `yaml:"mountpoint,omitempty"`
 		MountOptions string `yaml:"mountoptions,omitempty"`
+		UseSymlinks  bool   `yaml:"use_symlinks,omitempty"`
 		Forge        string `yaml:"forge,omitempty"`
 	}
 	GitlabClientConfig struct {
@@ -89,6 +90,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		FS: FSConfig{
 			Mountpoint:   "",
 			MountOptions: "nodev,nosuid",
+			UseSymlinks:  false,
 			Forge:        "",
 		},
 		Gitlab: GitlabClientConfig{

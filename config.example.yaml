@@ -6,6 +6,10 @@ fs:
   # See mount.fuse(8) for the full list of options.
   #mountoptions: nodev,nosuid
 
+  # Use a symlink to point to the real location of the repository instead of doing a loopback
+  # Faster and allow cloning to be asynchronous, but may cause compatibility issues
+  # use_symlinks: false
+
   # The git forge to use as the backend.
   # Must be one of "gitlab", "github", or "gitea"
   forge: gitlab

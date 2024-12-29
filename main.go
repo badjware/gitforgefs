@@ -98,7 +98,11 @@ func main() {
 		logger,
 		mountpoint,
 		parsedMountoptions,
-		&fstree.FSParam{GitClient: gitClient, GitForge: gitForgeClient},
+		&fstree.FSParam{
+			UseSymlinks: loadedConfig.FS.UseSymlinks,
+			GitClient:   gitClient,
+			GitForge:    gitForgeClient,
+		},
 		*debug,
 	)
 	if err != nil {

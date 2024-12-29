@@ -31,7 +31,7 @@ var _ = (fs.NodeReaddirer)((*groupNode)(nil))
 // Ensure we are implementing the NodeLookuper interface
 var _ = (fs.NodeLookuper)((*groupNode)(nil))
 
-func newGroupNodeFromSource(source GroupSource, param *FSParam) (*groupNode, error) {
+func newGroupNodeFromSource(ctx context.Context, source GroupSource, param *FSParam) (fs.InodeEmbedder, error) {
 	node := &groupNode{
 		param:  param,
 		source: source,
@@ -85,7 +85,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 				Ino:  group.GetGroupID() + groupBaseInode,
 				Mode: fuse.S_IFDIR,
 			}
-			groupNode, _ := newGroupNodeFromSource(group, n.param)
+			groupNode, _ := newGroupNodeFromSource(ctx, group, n.param)
 			return n.NewInode(ctx, groupNode, attrs), 0
 		}
 
@@ -93,10 +93,17 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		repository, found := repositories[name]
 		if found {
 			attrs := fs.StableAttr{
-				Ino:  repository.GetRepositoryID() + repositoryBaseInode,
-				Mode: fuse.S_IFLNK,
+				Ino: repository.GetRepositoryID() + repositoryBaseInode,
 			}
-			repositoryNode, _ := newRepositoryNodeFromSource(repository, n.param)
+			if n.param.UseSymlinks {
+				attrs.Mode = fuse.S_IFLNK
+			} else {
+				attrs.Mode = fuse.S_IFDIR
+			}
+			repositoryNode, err := newRepositoryNodeFromSource(ctx, repository, n.param)
+			if err != nil {
+				panic(err)
+			}
 			return n.NewInode(ctx, repositoryNode, attrs), 0
 		}
 
