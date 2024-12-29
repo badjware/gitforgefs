@@ -93,3 +93,23 @@ While the filesystem lives in memory, the git repositories that are cloned are s
 Simply use `make` to create the executable. The executable will be in `bin/`.
 
 See `make help` for all available targets.
+
+## Troubleshooting
+
+### My application claims that a file or a folder doesn't exists.
+
+Some applications doesn't resolve symlinks properly. Try setting the `fs.use_symlinks` configuration to `false`.
+
+### `docker` fails to run with the message _error while creating mount source path_
+
+This happens because `docker` is running as a different user than the one who created the mount. Follow these steps to allow docker access to the mount:
+
+1. Open the file `/etc/fuse.conf` as root.
+2. Add `user_allow_other` to the file, then close and save your modifications.
+3. Open your `gitforgefs` configuration.
+4. Add the `allow_other` to your mountoptions. The mount option are configured in `fs.mountoptions`.
+``` yaml
+fs:
+  mountoptions: allow_other,nodev,nosuid
+```
+5. Restart your mount.
