@@ -3,11 +3,14 @@ fs:
   #mountpoint: /mnt
 
   # Mount options to pass to `fusermount` as its `-o` argument. Can be overwritten via the command line.
+  # Some applications need the `allow_other` option to function properly (eg: docker). If you need to use `allow_other`,
+  # you must also add `user_allow_other` in /etc/fuse.conf.
   # See mount.fuse(8) for the full list of options.
   #mountoptions: nodev,nosuid
+  #mountoptions: allow_other,nodev,nosuid
 
   # Use a symlink to point to the real location of the repository instead of doing a loopback
-  # Faster and allow cloning to be asynchronous, but may cause compatibility issues
+  # Using symlinks is more performant and allow cloning to be asynchronous, but may cause compatibility issues with some applications
   # use_symlinks: false
 
   # The git forge to use as the backend.
