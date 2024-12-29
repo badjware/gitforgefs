@@ -54,3 +54,4 @@ tags
 # End of https://www.toptal.com/developers/gitignore/api/go,vim,code
 
 config.yaml
+__debug_*
