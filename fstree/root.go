@@ -19,7 +19,7 @@ type staticNode interface {
 }
 
 type GitClient interface {
-	FetchLocalRepositoryPath(source RepositorySource) (string, error)
+	FetchLocalRepositoryPath(ctx context.Context, source RepositorySource) (string, error)
 }
 
 type GitForge interface {
@@ -28,6 +28,8 @@ type GitForge interface {
 }
 
 type FSParam struct {
+	UseSymlinks bool
+
 	GitClient GitClient
 	GitForge  GitForge
 
@@ -75,7 +77,7 @@ func (n *rootNode) OnAdd(ctx context.Context) {
 	}
 
 	for groupName, group := range rootGroups {
-		groupNode, _ := newGroupNodeFromSource(group, n.param)
+		groupNode, _ := newGroupNodeFromSource(ctx, group, n.param)
 		persistentInode := n.NewPersistentInode(
 			ctx,
 			groupNode,

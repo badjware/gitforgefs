@@ -5,7 +5,7 @@ go 1.21
 require (
 	code.gitea.io/sdk/gitea v0.19.0
 	github.com/google/go-github/v63 v63.0.0
-	github.com/hanwen/go-fuse/v2 v2.5.1
+	github.com/hanwen/go-fuse/v2 v2.7.2
 	github.com/vmihailenco/taskq/v3 v3.2.9
 	github.com/xanzy/go-gitlab v0.107.0
 	gopkg.in/yaml.v2 v2.4.0

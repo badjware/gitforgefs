@@ -84,7 +84,7 @@ func NewClient(logger *slog.Logger, p config.GitClientConfig) (*gitClient, error
 	return c, nil
 }
 
-func (c *gitClient) FetchLocalRepositoryPath(source fstree.RepositorySource) (localRepoLoc string, err error) {
+func (c *gitClient) FetchLocalRepositoryPath(ctx context.Context, source fstree.RepositorySource) (localRepoLoc string, err error) {
 	rid := source.GetRepositoryID()
 	cloneUrl := source.GetCloneURL()
 	defaultBranch := source.GetDefaultBranch()
@@ -98,12 +98,12 @@ func (c *gitClient) FetchLocalRepositoryPath(source fstree.RepositorySource) (lo
 	localRepoLoc = filepath.Join(c.CloneLocation, hostname, strconv.Itoa(int(rid)))
 	if _, err := os.Stat(localRepoLoc); os.IsNotExist(err) {
 		// Dispatch clone msg
-		msg := c.cloneTask.WithArgs(context.Background(), cloneUrl, defaultBranch, localRepoLoc)
+		msg := c.cloneTask.WithArgs(ctx, cloneUrl, defaultBranch, localRepoLoc)
 		msg.OnceInPeriod(time.Second, rid)
 		c.queue.Add(msg)
 	} else if c.AutoPull {
 		// Dispatch pull msg
-		msg := c.pullTask.WithArgs(context.Background(), localRepoLoc, defaultBranch)
+		msg := c.pullTask.WithArgs(ctx, localRepoLoc, defaultBranch)
 		msg.OnceInPeriod(time.Second, rid)
 		c.queue.Add(msg)
 	}
