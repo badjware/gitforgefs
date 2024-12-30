@@ -31,7 +31,7 @@ func (o *Organization) InvalidateContentCache() {
 	o.childRepositories = nil
 }
 
-func (c *githubClient) fetchOrganization(orgName string) (*Organization, error) {
+func (c *githubClient) fetchOrganization(ctx context.Context, orgName string) (*Organization, error) {
 	c.organizationCacheMux.RLock()
 	cachedId, found := c.organizationNameToIDMap[orgName]
 	if found {
@@ -48,7 +48,7 @@ func (c *githubClient) fetchOrganization(orgName string) (*Organization, error) 
 	}
 
 	// If not found in cache, fetch organization infos from API
-	githubOrg, _, err := c.client.Organizations.Get(context.Background(), orgName)
+	githubOrg, _, err := c.client.Organizations.Get(ctx, orgName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch organization with name %v: %v", orgName, err)
 	}
@@ -68,7 +68,7 @@ func (c *githubClient) fetchOrganization(orgName string) (*Organization, error) 
 	return &newOrg, nil
 }
 
-func (c *githubClient) fetchOrganizationContent(org *Organization) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
+func (c *githubClient) fetchOrganizationContent(ctx context.Context, org *Organization) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	org.mux.Lock()
 	defer org.mux.Unlock()
 
@@ -82,12 +82,12 @@ func (c *githubClient) fetchOrganizationContent(org *Organization) (map[string]f
 			ListOptions: github.ListOptions{PerPage: 100},
 		}
 		for {
-			githubRepositories, response, err := c.client.Repositories.ListByOrg(context.Background(), org.Name, repositoryListOpt)
+			githubRepositories, response, err := c.client.Repositories.ListByOrg(ctx, org.Name, repositoryListOpt)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to fetch repository in github: %v", err)
 			}
 			for _, githubRepository := range githubRepositories {
-				repository := c.newRepositoryFromGithubRepository(githubRepository)
+				repository := c.newRepositoryFromGithubRepository(ctx, githubRepository)
 				if repository != nil {
 					childRepositories[repository.Path] = repository
 				}

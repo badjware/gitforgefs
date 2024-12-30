@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"context"
 	"path"
 
 	"github.com/badjware/gitforgefs/config"
@@ -26,7 +27,7 @@ func (p *Project) GetDefaultBranch() string {
 	return p.DefaultBranch
 }
 
-func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) *Project {
+func (c *gitlabClient) newProjectFromGitlabProject(ctx context.Context, project *gitlab.Project) *Project {
 	// https://godoc.org/github.com/xanzy/go-gitlab#Project
 	if c.ArchivedProjectHandling == config.ArchivedProjectIgnore && project.Archived {
 		return nil

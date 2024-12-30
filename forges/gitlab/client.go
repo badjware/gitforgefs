@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -72,14 +73,14 @@ func NewClient(logger *slog.Logger, config config.GitlabClientConfig) (*gitlabCl
 	return gitlabClient, nil
 }
 
-func (c *gitlabClient) FetchRootGroupContent() (map[string]fstree.GroupSource, error) {
+func (c *gitlabClient) FetchRootGroupContent(ctx context.Context) (map[string]fstree.GroupSource, error) {
 	// use cached values if available
 	if c.rootContent == nil {
 		rootGroupCache := make(map[string]fstree.GroupSource)
 
 		// fetch root groups
 		for _, gid := range c.GroupIDs {
-			group, err := c.fetchGroup(gid)
+			group, err := c.fetchGroup(ctx, gid)
 			if err != nil {
 				return nil, err
 			}
@@ -87,7 +88,7 @@ func (c *gitlabClient) FetchRootGroupContent() (map[string]fstree.GroupSource, e
 		}
 		// fetch users
 		for _, uid := range c.userIDs {
-			user, err := c.fetchUser(uid)
+			user, err := c.fetchUser(ctx, uid)
 			if err != nil {
 				return nil, err
 			}
@@ -99,20 +100,20 @@ func (c *gitlabClient) FetchRootGroupContent() (map[string]fstree.GroupSource, e
 	return c.rootContent, nil
 }
 
-func (c *gitlabClient) FetchGroupContent(gid uint64) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
+func (c *gitlabClient) FetchGroupContent(ctx context.Context, gid uint64) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	if slices.Contains[[]int, int](c.userIDs, int(gid)) {
 		// gid is a user
-		user, err := c.fetchUser(int(gid))
+		user, err := c.fetchUser(ctx, int(gid))
 		if err != nil {
 			return nil, nil, err
 		}
-		return c.fetchUserContent(user)
+		return c.fetchUserContent(ctx, user)
 	} else {
 		// gid is a group
-		group, err := c.fetchGroup(int(gid))
+		group, err := c.fetchGroup(ctx, int(gid))
 		if err != nil {
 			return nil, nil, err
 		}
-		return c.fetchGroupContent(group)
+		return c.fetchGroupContent(ctx, group)
 	}
 }

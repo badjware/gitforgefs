@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"path"
 
 	"github.com/badjware/gitforgefs/config"
@@ -26,7 +27,7 @@ func (r *Repository) GetDefaultBranch() string {
 	return r.DefaultBranch
 }
 
-func (c *githubClient) newRepositoryFromGithubRepository(repository *github.Repository) *Repository {
+func (c *githubClient) newRepositoryFromGithubRepository(ctx context.Context, repository *github.Repository) *Repository {
 	if c.ArchivedRepoHandling == config.ArchivedProjectIgnore && *repository.Archived {
 		return nil
 	}
