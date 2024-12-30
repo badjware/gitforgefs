@@ -1,6 +1,7 @@
 package gitea
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -58,12 +59,12 @@ func NewClient(logger *slog.Logger, config config.GiteaClientConfig) (*giteaClie
 	return giteaClient, nil
 }
 
-func (c *giteaClient) FetchRootGroupContent() (map[string]fstree.GroupSource, error) {
+func (c *giteaClient) FetchRootGroupContent(ctx context.Context) (map[string]fstree.GroupSource, error) {
 	if c.rootContent == nil {
 		rootContent := make(map[string]fstree.GroupSource)
 
 		for _, orgName := range c.GiteaClientConfig.OrgNames {
-			org, err := c.fetchOrganization(orgName)
+			org, err := c.fetchOrganization(ctx, orgName)
 			if err != nil {
 				c.logger.Warn(err.Error())
 			} else {
@@ -72,7 +73,7 @@ func (c *giteaClient) FetchRootGroupContent() (map[string]fstree.GroupSource, er
 		}
 
 		for _, userName := range c.GiteaClientConfig.UserNames {
-			user, err := c.fetchUser(userName)
+			user, err := c.fetchUser(ctx, userName)
 			if err != nil {
 				c.logger.Warn(err.Error())
 			} else {
@@ -85,12 +86,12 @@ func (c *giteaClient) FetchRootGroupContent() (map[string]fstree.GroupSource, er
 	return c.rootContent, nil
 }
 
-func (c *giteaClient) FetchGroupContent(gid uint64) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
+func (c *giteaClient) FetchGroupContent(ctx context.Context, gid uint64) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	if org, found := c.organizationCache[int64(gid)]; found {
-		return c.fetchOrganizationContent(org)
+		return c.fetchOrganizationContent(ctx, org)
 	}
 	if user, found := c.userCache[int64(gid)]; found {
-		return c.fetchUserContent(user)
+		return c.fetchUserContent(ctx, user)
 	}
 	return nil, nil, fmt.Errorf("invalid gid: %v", gid)
 }

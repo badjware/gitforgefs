@@ -31,7 +31,7 @@ func (u *User) InvalidateContentCache() {
 	u.childRepositories = nil
 }
 
-func (c *githubClient) fetchUser(userName string) (*User, error) {
+func (c *githubClient) fetchUser(ctx context.Context, userName string) (*User, error) {
 	c.userCacheMux.RLock()
 	cachedId, found := c.userNameToIDMap[userName]
 	if found {
@@ -48,7 +48,7 @@ func (c *githubClient) fetchUser(userName string) (*User, error) {
 	}
 
 	// If not found in cache, fetch user infos from API
-	githubUser, _, err := c.client.Users.Get(context.Background(), userName)
+	githubUser, _, err := c.client.Users.Get(ctx, userName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user with name %v: %v", userName, err)
 	}
@@ -68,7 +68,7 @@ func (c *githubClient) fetchUser(userName string) (*User, error) {
 	return &newUser, nil
 }
 
-func (c *githubClient) fetchUserContent(user *User) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
+func (c *githubClient) fetchUserContent(ctx context.Context, user *User) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	user.mux.Lock()
 	defer user.mux.Unlock()
 
@@ -82,12 +82,12 @@ func (c *githubClient) fetchUserContent(user *User) (map[string]fstree.GroupSour
 			ListOptions: github.ListOptions{PerPage: 100},
 		}
 		for {
-			githubRepositories, response, err := c.client.Repositories.ListByUser(context.Background(), user.Name, repositoryListOpt)
+			githubRepositories, response, err := c.client.Repositories.ListByUser(ctx, user.Name, repositoryListOpt)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to fetch repository in github: %v", err)
 			}
 			for _, githubRepository := range githubRepositories {
-				repository := c.newRepositoryFromGithubRepository(githubRepository)
+				repository := c.newRepositoryFromGithubRepository(ctx, githubRepository)
 				if repository != nil {
 					childRepositories[repository.Path] = repository
 				}

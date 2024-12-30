@@ -1,6 +1,7 @@
 package gitea
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -30,7 +31,7 @@ func (o *Organization) InvalidateContentCache() {
 	o.childRepositories = nil
 }
 
-func (c *giteaClient) fetchOrganization(orgName string) (*Organization, error) {
+func (c *giteaClient) fetchOrganization(ctx context.Context, orgName string) (*Organization, error) {
 	c.organizationCacheMux.RLock()
 	cachedId, found := c.organizationNameToIDMap[orgName]
 	if found {
@@ -67,7 +68,7 @@ func (c *giteaClient) fetchOrganization(orgName string) (*Organization, error) {
 	return &newOrg, nil
 }
 
-func (c *giteaClient) fetchOrganizationContent(org *Organization) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
+func (c *giteaClient) fetchOrganizationContent(ctx context.Context, org *Organization) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	org.mux.Lock()
 	defer org.mux.Unlock()
 
@@ -86,7 +87,7 @@ func (c *giteaClient) fetchOrganizationContent(org *Organization) (map[string]fs
 				return nil, nil, fmt.Errorf("failed to fetch repository in gitea: %v", err)
 			}
 			for _, giteaRepository := range giteaRepositories {
-				repository := c.newRepositoryFromGiteaRepository(giteaRepository)
+				repository := c.newRepositoryFromGiteaRepository(ctx, giteaRepository)
 				if repository != nil {
 					childRepositories[repository.Path] = repository
 				}

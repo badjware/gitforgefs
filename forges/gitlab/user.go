@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -30,7 +31,7 @@ func (u *User) InvalidateContentCache() {
 	u.childProjects = nil
 }
 
-func (c *gitlabClient) fetchUser(uid int) (*User, error) {
+func (c *gitlabClient) fetchUser(ctx context.Context, uid int) (*User, error) {
 	// start by searching the cache
 	// TODO: cache invalidation?
 	c.userCacheMux.RLock()
@@ -64,7 +65,7 @@ func (c *gitlabClient) fetchUser(uid int) (*User, error) {
 	return &newUser, nil
 }
 
-func (c *gitlabClient) fetchUserContent(user *User) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
+func (c *gitlabClient) fetchUserContent(ctx context.Context, user *User) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	// Only a single routine can fetch the user content at the time.
 	// We lock for the whole duration of the function to avoid fetching the same data from the API
 	// multiple times if concurrent calls where to occur.
@@ -88,7 +89,7 @@ func (c *gitlabClient) fetchUserContent(user *User) (map[string]fstree.GroupSour
 				return nil, nil, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
 			}
 			for _, gitlabProject := range gitlabProjects {
-				project := c.newProjectFromGitlabProject(gitlabProject)
+				project := c.newProjectFromGitlabProject(ctx, gitlabProject)
 				if project != nil {
 					childProjects[project.Path] = project
 				}

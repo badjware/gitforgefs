@@ -1,6 +1,7 @@
 package gitea
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -30,7 +31,7 @@ func (u *User) InvalidateContentCache() {
 	u.childRepositories = nil
 }
 
-func (c *giteaClient) fetchUser(userName string) (*User, error) {
+func (c *giteaClient) fetchUser(ctx context.Context, userName string) (*User, error) {
 	c.userCacheMux.RLock()
 	cachedId, found := c.userNameToIDMap[userName]
 	if found {
@@ -67,7 +68,7 @@ func (c *giteaClient) fetchUser(userName string) (*User, error) {
 	return &newUser, nil
 }
 
-func (c *giteaClient) fetchUserContent(user *User) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
+func (c *giteaClient) fetchUserContent(ctx context.Context, user *User) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	user.mux.Lock()
 	defer user.mux.Unlock()
 
@@ -86,7 +87,7 @@ func (c *giteaClient) fetchUserContent(user *User) (map[string]fstree.GroupSourc
 				return nil, nil, fmt.Errorf("failed to fetch repository in gitea: %v", err)
 			}
 			for _, giteaRepository := range giteaRepositories {
-				repository := c.newRepositoryFromGiteaRepository(giteaRepository)
+				repository := c.newRepositoryFromGiteaRepository(ctx, giteaRepository)
 				if repository != nil {
 					childRepositories[repository.Path] = repository
 				}

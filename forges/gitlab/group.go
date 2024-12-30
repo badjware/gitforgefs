@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -42,7 +43,7 @@ func (g *Group) InvalidateContentCache() {
 	g.childGroups = nil
 }
 
-func (c *gitlabClient) fetchGroup(gid int) (*Group, error) {
+func (c *gitlabClient) fetchGroup(ctx context.Context, gid int) (*Group, error) {
 	// start by searching the cache
 	// TODO: cache invalidation?
 	c.groupCacheMux.RLock()
@@ -113,7 +114,7 @@ func (c *gitlabClient) newGroupFromGitlabGroup(gitlabGroup *gitlab.Group) (*Grou
 	return &newGroup, nil
 }
 
-func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
+func (c *gitlabClient) fetchGroupContent(ctx context.Context, group *Group) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
 	// Only a single routine can fetch the group content at the time.
 	// We lock for the whole duration of the function to avoid fetching the same data from the API
 	// multiple times if concurrent calls where to occur.
@@ -162,7 +163,7 @@ func (c *gitlabClient) fetchGroupContent(group *Group) (map[string]fstree.GroupS
 				return nil, nil, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
 			}
 			for _, gitlabProject := range gitlabProjects {
-				project := c.newProjectFromGitlabProject(gitlabProject)
+				project := c.newProjectFromGitlabProject(ctx, gitlabProject)
 				if project != nil {
 					childProjects[project.Path] = project
 				}

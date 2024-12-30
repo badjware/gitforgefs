@@ -23,8 +23,8 @@ type GitClient interface {
 }
 
 type GitForge interface {
-	FetchRootGroupContent() (map[string]GroupSource, error)
-	FetchGroupContent(gid uint64) (map[string]GroupSource, map[string]RepositorySource, error)
+	FetchRootGroupContent(ctx context.Context) (map[string]GroupSource, error)
+	FetchGroupContent(ctx context.Context, gid uint64) (map[string]GroupSource, map[string]RepositorySource, error)
 }
 
 type FSParam struct {
@@ -71,7 +71,7 @@ func Start(logger *slog.Logger, mountpoint string, mountoptions []string, param 
 }
 
 func (n *rootNode) OnAdd(ctx context.Context) {
-	rootGroups, err := n.param.GitForge.FetchRootGroupContent()
+	rootGroups, err := n.param.GitForge.FetchRootGroupContent(ctx)
 	if err != nil {
 		panic(err)
 	}
