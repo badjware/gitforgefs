@@ -60,7 +60,7 @@ func Start(logger *slog.Logger, mountpoint string, mountoptions []string, param 
 		return fmt.Errorf("mount failed: %v", err)
 	}
 
-	signalChan := make(chan os.Signal)
+	signalChan := make(chan os.Signal, 1)
 	go signalHandler(logger, signalChan, server)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 

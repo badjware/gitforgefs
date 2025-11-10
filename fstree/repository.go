@@ -70,13 +70,7 @@ func (n *repositorySymlinkNode) Readlink(ctx context.Context) ([]byte, syscall.E
 	localRepositoryPath, err := n.param.GitClient.FetchLocalRepositoryPath(ctx, n.source)
 	if err != nil {
 		n.param.logger.Error(err.Error())
+		return nil, syscall.EIO
 	}
 	return []byte(localRepositoryPath), 0
-}
-
-type repositoryLoopbackNode struct {
-	fs.LoopbackNode
-	param *FSParam
-
-	source RepositorySource
 }
