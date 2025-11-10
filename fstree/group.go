@@ -102,7 +102,9 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 			}
 			repositoryNode, err := newRepositoryNodeFromSource(ctx, repository, n.param)
 			if err != nil {
-				panic(err)
+				n.param.logger.Error(err.Error())
+				// TODO: return the proper errno for the error
+				return nil, syscall.EIO
 			}
 			return n.NewInode(ctx, repositoryNode, attrs), 0
 		}
