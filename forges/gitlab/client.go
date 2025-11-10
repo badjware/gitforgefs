@@ -9,7 +9,7 @@ import (
 
 	"github.com/badjware/gitforgefs/config"
 	"github.com/badjware/gitforgefs/fstree"
-	"github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 type gitlabClient struct {
