@@ -1,3 +1,10 @@
+# v1.1.0
+
+* Now default to using a loopback instead of symlinks. This should improve compatibility.
+  * Use `fs.use_symlinks: true` to revert to symlinks.
+* Replaced taskq dependency with a simpler task queue implementation
+* Fix an issue with context propagation not being done properly
+
 # v1.0.0
 
 * Added support for Github forge
