@@ -35,7 +35,15 @@ func main() {
 	}
 
 	// Get logger
-	logger := slog.Default()
+	var level slog.Level
+	if *debug {
+		level = slog.LevelDebug
+	} else {
+		level = slog.LevelInfo
+	}
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+	}))
 
 	// Configure mountpoint
 	mountpoint := loadedConfig.FS.Mountpoint

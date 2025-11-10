@@ -8,13 +8,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
-	"time"
 
 	"github.com/badjware/gitforgefs/config"
 	"github.com/badjware/gitforgefs/fstree"
+	"github.com/badjware/gitforgefs/queue"
 	"github.com/badjware/gitforgefs/utils"
-	"github.com/vmihailenco/taskq/v3"
-	"github.com/vmihailenco/taskq/v3/memqueue"
 )
 
 type gitClient struct {
@@ -28,13 +26,10 @@ type gitClient struct {
 	minorVersion int
 	patchVersion string
 
-	queue     taskq.Queue
-	cloneTask *taskq.Task
-	pullTask  *taskq.Task
+	queue queue.TaskQueue
 }
 
 func NewClient(logger *slog.Logger, p config.GitClientConfig) (*gitClient, error) {
-	queueFactory := memqueue.NewFactory()
 	// Create the client
 	c := &gitClient{
 		GitClientConfig: p,
@@ -43,12 +38,7 @@ func NewClient(logger *slog.Logger, p config.GitClientConfig) (*gitClient, error
 
 		hostnameProg: regexp.MustCompile(`([a-z0-1\-]+\.)+[a-z0-1\-]+`),
 
-		queue: queueFactory.RegisterQueue(&taskq.QueueOptions{
-			Name:         "git-queue",
-			MaxNumWorker: int32(p.QueueWorkerCount),
-			BufferSize:   p.QueueSize,
-			Storage:      taskq.NewLocalStorage(),
-		}),
+		queue: queue.NewMemoryQueue(logger, "git-queue", p.QueueWorkerCount, p.QueueSize),
 	}
 
 	// Parse git version
@@ -69,18 +59,6 @@ func NewClient(logger *slog.Logger, p config.GitClientConfig) (*gitClient, error
 	c.patchVersion = gitVersionMatches[3]
 	logger.Info("Detected git version", "major", c.majorVersion, "minor", c.minorVersion, "patch", c.patchVersion)
 
-	// Register tasks
-	c.cloneTask = taskq.RegisterTask(&taskq.TaskOptions{
-		Name:       "git-clone",
-		Handler:    c.clone,
-		RetryLimit: 1,
-	})
-	c.pullTask = taskq.RegisterTask(&taskq.TaskOptions{
-		Name:       "git-pull",
-		Handler:    c.pull,
-		RetryLimit: 1,
-	})
-
 	return c, nil
 }
 
@@ -97,15 +75,15 @@ func (c *gitClient) FetchLocalRepositoryPath(ctx context.Context, source fstree.
 
 	localRepoLoc = filepath.Join(c.CloneLocation, hostname, strconv.Itoa(int(rid)))
 	if _, err := os.Stat(localRepoLoc); os.IsNotExist(err) {
-		// Dispatch clone msg
-		msg := c.cloneTask.WithArgs(ctx, cloneUrl, defaultBranch, localRepoLoc)
-		msg.OnceInPeriod(time.Second, rid)
-		c.queue.Add(msg)
+		// Dispatch clone task
+		c.queue.AddTask(func() {
+			c.clone(cloneUrl, defaultBranch, localRepoLoc)
+		})
 	} else if c.AutoPull {
-		// Dispatch pull msg
-		msg := c.pullTask.WithArgs(ctx, localRepoLoc, defaultBranch)
-		msg.OnceInPeriod(time.Second, rid)
-		c.queue.Add(msg)
+		// Dispatch pull task
+		c.queue.AddTask(func() {
+			c.pull(localRepoLoc, defaultBranch)
+		})
 	}
 	return localRepoLoc, nil
 }
