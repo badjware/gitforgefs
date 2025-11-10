@@ -5,7 +5,7 @@ import (
 	"path"
 
 	"github.com/badjware/gitforgefs/config"
-	"github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 type Project struct {

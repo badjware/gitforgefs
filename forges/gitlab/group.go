@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/badjware/gitforgefs/fstree"
-	"github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 type Group struct {
