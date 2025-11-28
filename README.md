@@ -83,7 +83,7 @@ To reduce the number of calls to the APIs and improve the responsiveness of the 
 
 ### Local repository cache
 
-While the filesystem lives in memory, the git repositories that are cloned are saved on disk. By default, they are saved in `$XDG_DATA_HOME/gitforgefs` or `$HOME/.local/share/gitforgefs`, if `$XDG_DATA_HOME` is unset. `gitforgefs` symlink to the local clone of that repo. The local clone is unaffected by project rename or archive/unarchive in Gitlab and a given project will always point to the correct local folder.
+While the filesystem lives in memory, the git repositories that are cloned are saved on disk. By default, they are saved in `$XDG_DATA_HOME/gitforgefs` or `$HOME/.local/share/gitforgefs`, if `$XDG_DATA_HOME` is unset. `gitforgefs` symlink to the local clone of that repo. The local clone is unaffected by project rename or archive/unarchive in the forge and a given project will always point to the correct local folder.
 
 ## Future improvements
 * Cache persists forever until a manual refresh is requested. Some way to automatically refresh after a timeout would be nice.
