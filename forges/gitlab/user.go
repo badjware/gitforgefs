@@ -17,6 +17,10 @@ func (u *User) GetGroupID() uint64 {
 	return uint64(u.ID)
 }
 
+func (u *User) GetGroupName() string {
+	return u.Name
+}
+
 func (u *User) GetGroupPath() string {
 	return u.Name
 }
@@ -32,7 +36,7 @@ func (c *gitlabClient) fetchUser(ctx context.Context, uid int) (*User, error) {
 	}, nil
 }
 
-func (c *gitlabClient) fetchUserContent(ctx context.Context, uid int) (types.GroupContent, error) {
+func (c *gitlabClient) fetchUserContent(ctx context.Context, uid int) (types.RepositoryGroupContent, error) {
 	childProjects := make(map[string]types.RepositorySource)
 
 	// Fetch the user repositories
@@ -44,7 +48,7 @@ func (c *gitlabClient) fetchUserContent(ctx context.Context, uid int) (types.Gro
 	for {
 		gitlabProjects, response, err := c.client.Projects.ListUserProjects(uid, listProjectOpt)
 		if err != nil {
-			return types.GroupContent{}, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
+			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
 		}
 		for _, gitlabProject := range gitlabProjects {
 			project := c.newProjectFromGitlabProject(gitlabProject)
@@ -58,8 +62,8 @@ func (c *gitlabClient) fetchUserContent(ctx context.Context, uid int) (types.Gro
 		// Get the next page
 		listProjectOpt.Page = response.NextPage
 	}
-	return types.GroupContent{
-		Groups:       make(map[string]types.GroupSource),
+	return types.RepositoryGroupContent{
+		Groups:       make(map[string]types.RepositoryGroupSource),
 		Repositories: childProjects,
 	}, nil
 }

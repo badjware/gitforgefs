@@ -13,7 +13,7 @@ type refreshNode struct {
 	fs.Inode
 	ino uint64
 
-	source types.GroupSource
+	source types.RepositoryGroupSource
 }
 
 // Ensure we are implementing the NodeSetattrer interface
@@ -22,7 +22,7 @@ var _ = (fs.NodeSetattrer)((*refreshNode)(nil))
 // Ensure we are implementing the NodeOpener interface
 var _ = (fs.NodeOpener)((*refreshNode)(nil))
 
-func newRefreshNode(source types.GroupSource, param *FSParam) *refreshNode {
+func newRefreshNode(source types.RepositoryGroupSource, param *FSParam) *refreshNode {
 	return &refreshNode{
 		ino:    0,
 		source: source,

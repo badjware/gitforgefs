@@ -17,7 +17,7 @@ type groupNode struct {
 	fs.Inode
 	param *FSParam
 
-	source      types.GroupSource
+	source      types.RepositoryGroupSource
 	staticNodes map[string]staticNode
 }
 
@@ -27,7 +27,7 @@ var _ = (fs.NodeReaddirer)((*groupNode)(nil))
 // Ensure we are implementing the NodeLookuper interface
 var _ = (fs.NodeLookuper)((*groupNode)(nil))
 
-func newGroupNodeFromSource(ctx context.Context, source types.GroupSource, param *FSParam) (fs.InodeEmbedder, error) {
+func newGroupNodeFromSource(ctx context.Context, source types.RepositoryGroupSource, param *FSParam) (fs.InodeEmbedder, error) {
 	node := &groupNode{
 		param:  param,
 		source: source,

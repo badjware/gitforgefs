@@ -17,6 +17,10 @@ func (u *User) GetGroupID() uint64 {
 	return uint64(u.ID)
 }
 
+func (u *User) GetGroupName() string {
+	return u.Name
+}
+
 func (u *User) GetGroupPath() string {
 	return u.Name
 }
@@ -32,10 +36,10 @@ func (c *githubClient) fetchUser(ctx context.Context, userName string) (*User, e
 	}, nil
 }
 
-func (c *githubClient) fetchUserContent(ctx context.Context, userName string) (types.GroupContent, error) {
+func (c *githubClient) fetchUserContent(ctx context.Context, userName string) (types.RepositoryGroupContent, error) {
 	user, err := c.fetchUser(ctx, userName)
 	if err != nil {
-		return types.GroupContent{}, err
+		return types.RepositoryGroupContent{}, err
 	}
 
 	repositories := make(map[string]types.RepositorySource)
@@ -47,12 +51,12 @@ func (c *githubClient) fetchUserContent(ctx context.Context, userName string) (t
 	for {
 		githubRepositories, response, err := c.client.Repositories.ListByUser(ctx, user.Name, repositoryListOpt)
 		if err != nil {
-			return types.GroupContent{}, fmt.Errorf("failed to fetch repository in github: %v", err)
+			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch repository in github: %v", err)
 		}
 		for _, githubRepository := range githubRepositories {
 			repository := c.newRepositoryFromGithubRepository(githubRepository)
 			if repository != nil {
-				repositories[repository.Path] = repository
+				repositories[repository.GetRepositoryName()] = repository
 			}
 		}
 		if response.NextPage == 0 {
@@ -62,8 +66,8 @@ func (c *githubClient) fetchUserContent(ctx context.Context, userName string) (t
 		repositoryListOpt.Page = response.NextPage
 	}
 
-	return types.GroupContent{
-		Groups:       make(map[string]types.GroupSource),
+	return types.RepositoryGroupContent{
+		Groups:       make(map[string]types.RepositoryGroupSource),
 		Repositories: repositories,
 	}, nil
 }

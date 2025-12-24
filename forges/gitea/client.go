@@ -46,8 +46,8 @@ func NewClient(logger *slog.Logger, config config.GiteaClientConfig) (*giteaClie
 	return giteaClient, nil
 }
 
-func (c *giteaClient) FetchRootGroupContent(ctx context.Context) (map[string]types.GroupSource, error) {
-	rootContent := make(map[string]types.GroupSource)
+func (c *giteaClient) FetchRootGroupContent(ctx context.Context) (map[string]types.RepositoryGroupSource, error) {
+	rootContent := make(map[string]types.RepositoryGroupSource)
 
 	for _, orgName := range c.GiteaClientConfig.OrgNames {
 		org, err := c.fetchOrganization(ctx, orgName)
@@ -71,7 +71,7 @@ func (c *giteaClient) FetchRootGroupContent(ctx context.Context) (map[string]typ
 	return rootContent, nil
 }
 
-func (c *giteaClient) FetchGroupContent(ctx context.Context, source types.GroupSource) (types.GroupContent, error) {
+func (c *giteaClient) FetchGroupContent(ctx context.Context, source types.RepositoryGroupSource) (types.RepositoryGroupContent, error) {
 	if _, found := c.users[source.GetGroupPath()]; found {
 		return c.fetchUserContent(ctx, source.GetGroupPath())
 	} else {

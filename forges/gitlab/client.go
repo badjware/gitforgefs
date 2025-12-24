@@ -59,8 +59,8 @@ func NewClient(logger *slog.Logger, config config.GitlabClientConfig) (*gitlabCl
 	return gitlabClient, nil
 }
 
-func (c *gitlabClient) FetchRootGroupContent(ctx context.Context) (map[string]types.GroupSource, error) {
-	rootContent := make(map[string]types.GroupSource)
+func (c *gitlabClient) FetchRootGroupContent(ctx context.Context) (map[string]types.RepositoryGroupSource, error) {
+	rootContent := make(map[string]types.RepositoryGroupSource)
 
 	// fetch root groups
 	for _, gid := range c.GroupIDs {
@@ -81,7 +81,7 @@ func (c *gitlabClient) FetchRootGroupContent(ctx context.Context) (map[string]ty
 	return rootContent, nil
 }
 
-func (c *gitlabClient) FetchGroupContent(ctx context.Context, source types.GroupSource) (types.GroupContent, error) {
+func (c *gitlabClient) FetchGroupContent(ctx context.Context, source types.RepositoryGroupSource) (types.RepositoryGroupContent, error) {
 	if _, found := c.users[source.GetGroupPath()]; found {
 		return c.fetchUserContent(ctx, int(source.GetGroupID()))
 	} else {
