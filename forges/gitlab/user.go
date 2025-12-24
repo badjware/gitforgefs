@@ -32,7 +32,7 @@ func (c *gitlabClient) fetchUser(ctx context.Context, uid int) (*User, error) {
 	}, nil
 }
 
-func (c *gitlabClient) fetchUserContent(ctx context.Context, uid uint64) (types.GroupContent, error) {
+func (c *gitlabClient) fetchUserContent(ctx context.Context, uid int) (types.GroupContent, error) {
 	childProjects := make(map[string]types.RepositorySource)
 
 	// Fetch the user repositories

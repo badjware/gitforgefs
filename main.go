@@ -105,7 +105,7 @@ func main() {
 	}
 
 	// setup cache
-	cache := cache.NewForgeCache(gitForgeClient)
+	cache := cache.NewForgeCache(gitForgeClient, logger)
 
 	// Start the filesystem
 	err = fstree.Start(

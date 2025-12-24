@@ -39,7 +39,7 @@ type (
 		URL   string `yaml:"url,omitempty"`
 		Token string `yaml:"token,omitempty"`
 
-		GroupIDs  []uint64 `yaml:"group_ids,omitempty"`
+		GroupIDs  []int    `yaml:"group_ids,omitempty"`
 		UserNames []string `yaml:"user_names,omitempty"`
 
 		ArchivedProjectHandling string `yaml:"archived_project_handling,omitempty"`
@@ -97,7 +97,7 @@ func LoadConfig(configPath string) (*Config, error) {
 			URL:                     "https://gitlab.com",
 			Token:                   "",
 			PullMethod:              "http",
-			GroupIDs:                []uint64{9970},
+			GroupIDs:                []int{9970},
 			UserNames:               []string{},
 			ArchivedProjectHandling: "hide",
 			IncludeCurrentUser:      true,
