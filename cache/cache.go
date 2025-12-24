@@ -20,7 +20,7 @@ type Cache struct {
 	cachedContent map[string]CachedContent
 }
 
-func NewForgeCache(backend types.GitForge, logger *slog.Logger) types.GitForge {
+func NewForgeCache(backend types.GitForge, logger *slog.Logger) *Cache {
 	return &Cache{
 		backend: backend,
 		logger:  logger,
@@ -84,7 +84,7 @@ func (c *Cache) FetchGroupContent(ctx context.Context, source types.RepositoryGr
 		if err != nil {
 			return types.RepositoryGroupContent{}, err
 		}
-		c.cachedContent[source.GetGroupName()] = CachedContent{
+		c.cachedContent[source.GetGroupPath()] = CachedContent{
 			RepositoryGroupContent: content,
 			creationTime:           time.Now(),
 		}
