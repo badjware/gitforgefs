@@ -14,7 +14,7 @@ type Cache struct {
 	logger  *slog.Logger
 
 	rootContentLock   sync.RWMutex
-	cachedRootContent map[string]types.GroupSource
+	cachedRootContent map[string]types.RepositoryGroupSource
 
 	contentLock   sync.RWMutex
 	cachedContent map[string]CachedContent
@@ -30,11 +30,11 @@ func NewForgeCache(backend types.GitForge, logger *slog.Logger) types.GitForge {
 }
 
 type CachedContent struct {
-	types.GroupContent
+	types.RepositoryGroupContent
 	creationTime time.Time
 }
 
-func (c *Cache) FetchRootGroupContent(ctx context.Context) (map[string]types.GroupSource, error) {
+func (c *Cache) FetchRootGroupContent(ctx context.Context) (map[string]types.RepositoryGroupSource, error) {
 	c.rootContentLock.RLock()
 	if c.cachedRootContent == nil {
 		c.rootContentLock.RUnlock()
@@ -59,7 +59,8 @@ func (c *Cache) FetchRootGroupContent(ctx context.Context) (map[string]types.Gro
 	return c.cachedRootContent, nil
 }
 
-func (c *Cache) FetchGroupContent(ctx context.Context, source types.GroupSource) (types.GroupContent, error) {
+// TODO: improve locking strategy
+func (c *Cache) FetchGroupContent(ctx context.Context, source types.RepositoryGroupSource) (types.RepositoryGroupContent, error) {
 	logger := c.logger.With("groupID", source.GetGroupID()).With("groupPath", source.GetGroupPath())
 
 	c.contentLock.RLock()
@@ -74,24 +75,24 @@ func (c *Cache) FetchGroupContent(ctx context.Context, source types.GroupSource)
 
 		// read the map again to make sure the data is still not there
 		if cachedContent, found := c.cachedContent[source.GetGroupPath()]; found {
-			return cachedContent.GroupContent, nil
+			return cachedContent.RepositoryGroupContent, nil
 		}
 
 		// fetch content from backend and cache it
 		logger.Info("Fetching content from backend")
 		content, err := c.backend.FetchGroupContent(ctx, source)
 		if err != nil {
-			return types.GroupContent{}, err
+			return types.RepositoryGroupContent{}, err
 		}
-		c.cachedContent[source.GetGroupPath()] = CachedContent{
-			GroupContent: content,
-			creationTime: time.Now(),
+		c.cachedContent[source.GetGroupName()] = CachedContent{
+			RepositoryGroupContent: content,
+			creationTime:           time.Now(),
 		}
 		return content, nil
 	} else {
 		c.contentLock.RUnlock()
 		logger.Debug("Cache hit")
-		return cachedContent.GroupContent, nil
+		return cachedContent.RepositoryGroupContent, nil
 	}
 }
 

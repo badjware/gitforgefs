@@ -43,8 +43,8 @@ func (c *gitlabClient) fetchGroup(ctx context.Context, gid int) (*Group, error) 
 	return c.newGroupFromGitlabGroup(gitlabGroup), nil
 }
 
-func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid int) (types.GroupContent, error) {
-	childGroups := make(map[string]types.GroupSource)
+func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid int) (types.RepositoryGroupContent, error) {
+	childGroups := make(map[string]types.RepositoryGroupSource)
 	childProjects := make(map[string]types.RepositorySource)
 
 	// List subgroups in path
@@ -58,7 +58,7 @@ func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid int) (types.Gr
 	for {
 		gitlabGroups, response, err := c.client.Groups.ListSubGroups(gid, listGroupsOpt)
 		if err != nil {
-			return types.GroupContent{}, fmt.Errorf("failed to fetch groups in gitlab: %v", err)
+			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch groups in gitlab: %v", err)
 		}
 		for _, gitlabGroup := range gitlabGroups {
 			group := c.newGroupFromGitlabGroup(gitlabGroup)
@@ -82,7 +82,7 @@ func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid int) (types.Gr
 	for {
 		gitlabProjects, response, err := c.client.Groups.ListGroupProjects(gid, listProjectOpt)
 		if err != nil {
-			return types.GroupContent{}, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
+			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
 		}
 		for _, gitlabProject := range gitlabProjects {
 			project := c.newProjectFromGitlabProject(gitlabProject)
@@ -96,7 +96,7 @@ func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid int) (types.Gr
 		// Get the next page
 		listProjectOpt.Page = response.NextPage
 	}
-	return types.GroupContent{
+	return types.RepositoryGroupContent{
 		Groups:       childGroups,
 		Repositories: childProjects,
 	}, nil

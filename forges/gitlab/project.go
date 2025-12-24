@@ -23,6 +23,10 @@ func (p *Project) GetRepositoryName() string {
 	return p.Name
 }
 
+func (p *Project) GetRepositoryPath() string {
+	return p.Path
+}
+
 func (p *Project) GetCloneURL() string {
 	return p.CloneURL
 }
@@ -51,6 +55,7 @@ func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) *Pro
 		p.CloneURL = project.HTTPURLToRepo
 	}
 	if c.ArchivedProjectHandling == config.ArchivedProjectHide && project.Archived {
+		p.Name = "." + p.Name
 		p.Path = path.Join(path.Dir(p.Path), "."+path.Base(p.Path))
 	}
 	return &p

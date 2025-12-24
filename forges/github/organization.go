@@ -17,6 +17,10 @@ func (o *Organization) GetGroupID() uint64 {
 	return uint64(o.ID)
 }
 
+func (o *Organization) GetGroupName() string {
+	return o.Name
+}
+
 func (o *Organization) GetGroupPath() string {
 	return o.Name
 }
@@ -32,10 +36,10 @@ func (c *githubClient) fetchOrganization(ctx context.Context, orgName string) (*
 	}, nil
 }
 
-func (c *githubClient) fetchOrganizationContent(ctx context.Context, orgName string) (types.GroupContent, error) {
+func (c *githubClient) fetchOrganizationContent(ctx context.Context, orgName string) (types.RepositoryGroupContent, error) {
 	org, err := c.fetchOrganization(ctx, orgName)
 	if err != nil {
-		return types.GroupContent{}, err
+		return types.RepositoryGroupContent{}, err
 	}
 
 	repositories := make(map[string]types.RepositorySource)
@@ -47,7 +51,7 @@ func (c *githubClient) fetchOrganizationContent(ctx context.Context, orgName str
 	for {
 		githubRepositories, response, err := c.client.Repositories.ListByOrg(ctx, org.Name, repositoryListOpt)
 		if err != nil {
-			return types.GroupContent{}, fmt.Errorf("failed to fetch repository in github: %v", err)
+			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch repository in github: %v", err)
 		}
 		for _, githubRepository := range githubRepositories {
 			repository := c.newRepositoryFromGithubRepository(githubRepository)
@@ -62,8 +66,8 @@ func (c *githubClient) fetchOrganizationContent(ctx context.Context, orgName str
 		repositoryListOpt.Page = response.NextPage
 	}
 
-	return types.GroupContent{
-		Groups:       make(map[string]types.GroupSource),
+	return types.RepositoryGroupContent{
+		Groups:       make(map[string]types.RepositoryGroupSource),
 		Repositories: repositories,
 	}, nil
 }

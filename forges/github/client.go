@@ -45,8 +45,8 @@ func NewClient(logger *slog.Logger, config config.GithubClientConfig) (*githubCl
 	return gitHubClient, nil
 }
 
-func (c *githubClient) FetchRootGroupContent(ctx context.Context) (map[string]types.GroupSource, error) {
-	rootContent := make(map[string]types.GroupSource)
+func (c *githubClient) FetchRootGroupContent(ctx context.Context) (map[string]types.RepositoryGroupSource, error) {
+	rootContent := make(map[string]types.RepositoryGroupSource)
 
 	for _, orgName := range c.GithubClientConfig.OrgNames {
 		org, err := c.fetchOrganization(ctx, orgName)
@@ -70,7 +70,7 @@ func (c *githubClient) FetchRootGroupContent(ctx context.Context) (map[string]ty
 	return rootContent, nil
 }
 
-func (c *githubClient) FetchGroupContent(ctx context.Context, source types.GroupSource) (types.GroupContent, error) {
+func (c *githubClient) FetchGroupContent(ctx context.Context, source types.RepositoryGroupSource) (types.RepositoryGroupContent, error) {
 	if _, found := c.users[source.GetGroupPath()]; found {
 		return c.fetchUserContent(ctx, source.GetGroupPath())
 	} else {

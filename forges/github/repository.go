@@ -9,6 +9,7 @@ import (
 
 type Repository struct {
 	ID            int64
+	Name          string
 	Path          string
 	CloneURL      string
 	DefaultBranch string
@@ -19,6 +20,10 @@ func (r *Repository) GetRepositoryID() uint64 {
 }
 
 func (r *Repository) GetRepositoryName() string {
+	return r.Name
+}
+
+func (r *Repository) GetRepositoryPath() string {
 	return r.Path
 }
 
@@ -36,7 +41,8 @@ func (c *githubClient) newRepositoryFromGithubRepository(repository *github.Repo
 	}
 	r := Repository{
 		ID:            *repository.ID,
-		Path:          *repository.Name,
+		Name:          *repository.Name,
+		Path:          *repository.FullName,
 		DefaultBranch: *repository.DefaultBranch,
 	}
 	if r.DefaultBranch == "" {
@@ -48,6 +54,7 @@ func (c *githubClient) newRepositoryFromGithubRepository(repository *github.Repo
 		r.CloneURL = *repository.CloneURL
 	}
 	if c.ArchivedRepoHandling == config.ArchivedProjectHide && *repository.Archived {
+		r.Name = "." + r.Name
 		r.Path = path.Join(path.Dir(r.Path), "."+path.Base(r.Path))
 	}
 	return &r

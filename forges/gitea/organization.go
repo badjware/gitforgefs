@@ -17,6 +17,10 @@ func (o *Organization) GetGroupID() uint64 {
 	return uint64(o.ID)
 }
 
+func (o *Organization) GetGroupName() string {
+	return o.Name
+}
+
 func (o *Organization) GetGroupPath() string {
 	return o.Name
 }
@@ -34,10 +38,10 @@ func (c *giteaClient) fetchOrganization(ctx context.Context, orgName string) (*O
 	return &newOrg, nil
 }
 
-func (c *giteaClient) fetchOrganizationContent(ctx context.Context, orgName string) (types.GroupContent, error) {
+func (c *giteaClient) fetchOrganizationContent(ctx context.Context, orgName string) (types.RepositoryGroupContent, error) {
 	org, err := c.fetchOrganization(ctx, orgName)
 	if err != nil {
-		return types.GroupContent{}, err
+		return types.RepositoryGroupContent{}, err
 	}
 
 	repositories := make(map[string]types.RepositorySource)
@@ -49,7 +53,7 @@ func (c *giteaClient) fetchOrganizationContent(ctx context.Context, orgName stri
 	for {
 		giteaRepositories, response, err := c.client.ListOrgRepos(org.Name, gitea.ListOrgReposOptions(listReposOptions))
 		if err != nil {
-			return types.GroupContent{}, fmt.Errorf("failed to fetch repository in gitea: %v", err)
+			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch repository in gitea: %v", err)
 		}
 		for _, giteaRepository := range giteaRepositories {
 			repository := c.newRepositoryFromGiteaRepository(giteaRepository)
@@ -64,8 +68,8 @@ func (c *giteaClient) fetchOrganizationContent(ctx context.Context, orgName stri
 		listReposOptions.Page = response.NextPage
 	}
 
-	return types.GroupContent{
-		Groups:       make(map[string]types.GroupSource),
+	return types.RepositoryGroupContent{
+		Groups:       make(map[string]types.RepositoryGroupSource),
 		Repositories: repositories,
 	}, nil
 }
