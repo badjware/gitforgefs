@@ -20,7 +20,7 @@ type Cache struct {
 	cachedContent map[string]CachedContent
 }
 
-func NewForgeCache(backend types.GitForge, logger *slog.Logger) *Cache {
+func NewForgeCache(backend types.GitForge, logger *slog.Logger) types.GitForgeCacher {
 	return &Cache{
 		backend: backend,
 		logger:  logger,
@@ -96,9 +96,9 @@ func (c *Cache) FetchGroupContent(ctx context.Context, source types.RepositoryGr
 	}
 }
 
-func (c *Cache) InvalidateCache(path string) {
+func (c *Cache) InvalidateCache(source types.RepositoryGroupSource) {
 	c.contentLock.Lock()
 	defer c.contentLock.Unlock()
 
-	delete(c.cachedContent, path)
+	delete(c.cachedContent, source.GetGroupPath())
 }

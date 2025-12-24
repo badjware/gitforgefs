@@ -19,15 +19,11 @@ type staticNode interface {
 	Mode() uint32
 }
 
-type GitClient interface {
-	FetchLocalRepositoryPath(ctx context.Context, source types.RepositorySource) (string, error)
-}
-
 type FSParam struct {
 	UseSymlinks bool
 
-	GitClient GitClient
-	GitForge  types.GitForge
+	GitClient types.GitClient
+	Backend   types.GitForgeCacher
 
 	logger *slog.Logger
 }
@@ -67,7 +63,7 @@ func Start(logger *slog.Logger, mountpoint string, mountoptions []string, param 
 }
 
 func (n *rootNode) OnAdd(ctx context.Context) {
-	rootGroups, err := n.param.GitForge.FetchRootGroupContent(ctx)
+	rootGroups, err := n.param.Backend.FetchRootGroupContent(ctx)
 	if err != nil {
 		panic(err)
 	}

@@ -29,7 +29,7 @@ type gitClient struct {
 	queue queue.TaskQueue
 }
 
-func NewClient(logger *slog.Logger, p config.GitClientConfig) (*gitClient, error) {
+func NewClient(logger *slog.Logger, p config.GitClientConfig) (types.GitClient, error) {
 	// Create the client
 	c := &gitClient{
 		GitClientConfig: p,
