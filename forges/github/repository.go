@@ -1,7 +1,6 @@
 package github
 
 import (
-	"context"
 	"path"
 
 	"github.com/badjware/gitforgefs/config"
@@ -19,6 +18,10 @@ func (r *Repository) GetRepositoryID() uint64 {
 	return uint64(r.ID)
 }
 
+func (r *Repository) GetRepositoryName() string {
+	return r.Path
+}
+
 func (r *Repository) GetCloneURL() string {
 	return r.CloneURL
 }
@@ -27,7 +30,7 @@ func (r *Repository) GetDefaultBranch() string {
 	return r.DefaultBranch
 }
 
-func (c *githubClient) newRepositoryFromGithubRepository(ctx context.Context, repository *github.Repository) *Repository {
+func (c *githubClient) newRepositoryFromGithubRepository(repository *github.Repository) *Repository {
 	if c.ArchivedRepoHandling == config.ArchivedProjectIgnore && *repository.Archived {
 		return nil
 	}

@@ -1,7 +1,6 @@
 package gitlab
 
 import (
-	"context"
 	"path"
 
 	"github.com/badjware/gitforgefs/config"
@@ -10,6 +9,7 @@ import (
 
 type Project struct {
 	ID            int
+	Name          string
 	Path          string
 	CloneURL      string
 	DefaultBranch string
@@ -17,6 +17,10 @@ type Project struct {
 
 func (p *Project) GetRepositoryID() uint64 {
 	return uint64(p.ID)
+}
+
+func (p *Project) GetRepositoryName() string {
+	return p.Name
 }
 
 func (p *Project) GetCloneURL() string {
@@ -27,7 +31,7 @@ func (p *Project) GetDefaultBranch() string {
 	return p.DefaultBranch
 }
 
-func (c *gitlabClient) newProjectFromGitlabProject(ctx context.Context, project *gitlab.Project) *Project {
+func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) *Project {
 	// https://godoc.org/github.com/xanzy/go-gitlab#Project
 	if c.ArchivedProjectHandling == config.ArchivedProjectIgnore && project.Archived {
 		return nil

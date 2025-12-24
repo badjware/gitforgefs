@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/badjware/gitforgefs/types"
 	"github.com/hanwen/go-fuse/v2/fs"
 )
 
@@ -19,20 +20,13 @@ type repositorySymlinkNode struct {
 	fs.Inode
 	param *FSParam
 
-	source RepositorySource
-}
-
-type RepositorySource interface {
-	// GetName() string
-	GetRepositoryID() uint64
-	GetCloneURL() string
-	GetDefaultBranch() string
+	source types.RepositorySource
 }
 
 // Ensure we are implementing the NodeReaddirer interface
 var _ = (fs.NodeReadlinker)((*repositorySymlinkNode)(nil))
 
-func newRepositoryNodeFromSource(ctx context.Context, source RepositorySource, param *FSParam) (fs.InodeEmbedder, error) {
+func newRepositoryNodeFromSource(ctx context.Context, source types.RepositorySource, param *FSParam) (fs.InodeEmbedder, error) {
 	if param.UseSymlinks {
 		return &repositorySymlinkNode{
 			param:  param,

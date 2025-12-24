@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"slices"
-	"sync"
 
 	"github.com/badjware/gitforgefs/config"
-	"github.com/badjware/gitforgefs/fstree"
+	"github.com/badjware/gitforgefs/types"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
@@ -18,15 +16,8 @@ type gitlabClient struct {
 
 	logger *slog.Logger
 
-	rootContent map[string]fstree.GroupSource
-
-	userIDs []int
-
-	// API response cache
-	groupCacheMux sync.RWMutex
-	groupCache    map[int]*Group
-	userCacheMux  sync.RWMutex
-	userCache     map[int]*User
+	// use a map without values for efficient lookups
+	users map[string]int
 }
 
 func NewClient(logger *slog.Logger, config config.GitlabClientConfig) (*gitlabClient, error) {
@@ -44,12 +35,7 @@ func NewClient(logger *slog.Logger, config config.GitlabClientConfig) (*gitlabCl
 
 		logger: logger,
 
-		rootContent: nil,
-
-		userIDs: []int{},
-
-		groupCache: map[int]*Group{},
-		userCache:  map[int]*User{},
+		users: make(map[string]int),
 	}
 
 	// Fetch current user and add it to the list
@@ -57,7 +43,7 @@ func NewClient(logger *slog.Logger, config config.GitlabClientConfig) (*gitlabCl
 	if err != nil {
 		logger.Warn("failed to fetch the current user:", "error", err.Error())
 	} else {
-		gitlabClient.userIDs = append(gitlabClient.userIDs, currentUser.ID)
+		gitlabClient.users[currentUser.Username] = currentUser.ID
 	}
 
 	// Fetch the configured users and add them to the list
@@ -66,54 +52,39 @@ func NewClient(logger *slog.Logger, config config.GitlabClientConfig) (*gitlabCl
 		if err != nil || len(user) != 1 {
 			logger.Warn("failed to fetch the user", "userName", userName, "error", err.Error())
 		} else {
-			gitlabClient.userIDs = append(gitlabClient.userIDs, user[0].ID)
+			gitlabClient.users[userName] = user[0].ID
 		}
 	}
 
 	return gitlabClient, nil
 }
 
-func (c *gitlabClient) FetchRootGroupContent(ctx context.Context) (map[string]fstree.GroupSource, error) {
-	// use cached values if available
-	if c.rootContent == nil {
-		rootGroupCache := make(map[string]fstree.GroupSource)
+func (c *gitlabClient) FetchRootGroupContent(ctx context.Context) (map[string]types.GroupSource, error) {
+	rootContent := make(map[string]types.GroupSource)
 
-		// fetch root groups
-		for _, gid := range c.GroupIDs {
-			group, err := c.fetchGroup(ctx, gid)
-			if err != nil {
-				return nil, err
-			}
-			rootGroupCache[group.Name] = group
+	// fetch root groups
+	for _, gid := range c.GroupIDs {
+		group, err := c.fetchGroup(ctx, gid)
+		if err != nil {
+			return nil, err
 		}
-		// fetch users
-		for _, uid := range c.userIDs {
-			user, err := c.fetchUser(ctx, uid)
-			if err != nil {
-				return nil, err
-			}
-			rootGroupCache[user.Name] = user
-		}
-
-		c.rootContent = rootGroupCache
+		rootContent[group.Name] = group
 	}
-	return c.rootContent, nil
+	// fetch users
+	for _, uid := range c.users {
+		user, err := c.fetchUser(ctx, uid)
+		if err != nil {
+			return nil, err
+		}
+		rootContent[user.Name] = user
+	}
+	return rootContent, nil
 }
 
-func (c *gitlabClient) FetchGroupContent(ctx context.Context, gid uint64) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
-	if slices.Contains[[]int, int](c.userIDs, int(gid)) {
-		// gid is a user
-		user, err := c.fetchUser(ctx, int(gid))
-		if err != nil {
-			return nil, nil, err
-		}
-		return c.fetchUserContent(ctx, user)
+func (c *gitlabClient) FetchGroupContent(ctx context.Context, source types.GroupSource) (types.GroupContent, error) {
+	if _, found := c.users[source.GetGroupPath()]; found {
+		return c.fetchUserContent(ctx, source.GetGroupID())
 	} else {
-		// gid is a group
-		group, err := c.fetchGroup(ctx, int(gid))
-		if err != nil {
-			return nil, nil, err
-		}
-		return c.fetchGroupContent(ctx, group)
+		return c.fetchGroupContent(ctx, source.GetGroupID())
 	}
 }

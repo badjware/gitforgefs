@@ -4,6 +4,7 @@ import (
 	"context"
 	"syscall"
 
+	"github.com/badjware/gitforgefs/types"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
@@ -16,13 +17,8 @@ type groupNode struct {
 	fs.Inode
 	param *FSParam
 
-	source      GroupSource
+	source      types.GroupSource
 	staticNodes map[string]staticNode
-}
-
-type GroupSource interface {
-	GetGroupID() uint64
-	InvalidateContentCache()
 }
 
 // Ensure we are implementing the NodeReaddirer interface
@@ -31,7 +27,7 @@ var _ = (fs.NodeReaddirer)((*groupNode)(nil))
 // Ensure we are implementing the NodeLookuper interface
 var _ = (fs.NodeLookuper)((*groupNode)(nil))
 
-func newGroupNodeFromSource(ctx context.Context, source GroupSource, param *FSParam) (fs.InodeEmbedder, error) {
+func newGroupNodeFromSource(ctx context.Context, source types.GroupSource, param *FSParam) (fs.InodeEmbedder, error) {
 	node := &groupNode{
 		param:  param,
 		source: source,
@@ -43,20 +39,20 @@ func newGroupNodeFromSource(ctx context.Context, source GroupSource, param *FSPa
 }
 
 func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
-	groups, repositories, err := n.param.GitForge.FetchGroupContent(ctx, n.source.GetGroupID())
+	content, err := n.param.GitForge.FetchGroupContent(ctx, n.source)
 	if err != nil {
 		n.param.logger.Error(err.Error())
 	}
 
-	entries := make([]fuse.DirEntry, 0, len(groups)+len(repositories)+len(n.staticNodes))
-	for groupName, group := range groups {
+	entries := make([]fuse.DirEntry, 0, len(content.Groups)+len(content.Repositories)+len(n.staticNodes))
+	for groupName, group := range content.Groups {
 		entries = append(entries, fuse.DirEntry{
 			Name: groupName,
 			Ino:  group.GetGroupID() + groupBaseInode,
 			Mode: fuse.S_IFDIR,
 		})
 	}
-	for repositoryName, repository := range repositories {
+	for repositoryName, repository := range content.Repositories {
 		entries = append(entries, fuse.DirEntry{
 			Name: repositoryName,
 			Ino:  repository.GetRepositoryID() + repositoryBaseInode,
@@ -74,12 +70,12 @@ func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 }
 
 func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	groups, repositories, err := n.param.GitForge.FetchGroupContent(ctx, n.source.GetGroupID())
+	content, err := n.param.GitForge.FetchGroupContent(ctx, n.source)
 	if err != nil {
 		n.param.logger.Error(err.Error())
 	} else {
 		// Check if the map of groups contains it
-		group, found := groups[name]
+		group, found := content.Groups[name]
 		if found {
 			attrs := fs.StableAttr{
 				Ino:  group.GetGroupID() + groupBaseInode,
@@ -90,7 +86,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		}
 
 		// Check if the map of projects contains it
-		repository, found := repositories[name]
+		repository, found := content.Repositories[name]
 		if found {
 			attrs := fs.StableAttr{
 				Ino: repository.GetRepositoryID() + repositoryBaseInode,

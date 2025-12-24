@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/badjware/gitforgefs/types"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
@@ -19,19 +20,14 @@ type staticNode interface {
 }
 
 type GitClient interface {
-	FetchLocalRepositoryPath(ctx context.Context, source RepositorySource) (string, error)
-}
-
-type GitForge interface {
-	FetchRootGroupContent(ctx context.Context) (map[string]GroupSource, error)
-	FetchGroupContent(ctx context.Context, gid uint64) (map[string]GroupSource, map[string]RepositorySource, error)
+	FetchLocalRepositoryPath(ctx context.Context, source types.RepositorySource) (string, error)
 }
 
 type FSParam struct {
 	UseSymlinks bool
 
 	GitClient GitClient
-	GitForge  GitForge
+	GitForge  types.GitForge
 
 	logger *slog.Logger
 }

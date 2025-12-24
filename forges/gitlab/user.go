@@ -3,105 +3,63 @@ package gitlab
 import (
 	"context"
 	"fmt"
-	"sync"
 
-	"github.com/badjware/gitforgefs/fstree"
+	"github.com/badjware/gitforgefs/types"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 type User struct {
 	ID   int
 	Name string
-
-	mux sync.Mutex
-
-	// hold user content
-	childProjects map[string]fstree.RepositorySource
 }
 
 func (u *User) GetGroupID() uint64 {
 	return uint64(u.ID)
 }
 
-func (u *User) InvalidateContentCache() {
-	u.mux.Lock()
-	defer u.mux.Unlock()
-
-	// clear child repositories from cache
-	u.childProjects = nil
+func (u *User) GetGroupPath() string {
+	return u.Name
 }
 
 func (c *gitlabClient) fetchUser(ctx context.Context, uid int) (*User, error) {
-	// start by searching the cache
-	// TODO: cache invalidation?
-	c.userCacheMux.RLock()
-	user, found := c.userCache[uid]
-	c.userCacheMux.RUnlock()
-	if found {
-		// if found in cache, return the cached reference
-		c.logger.Debug("User cache hit", "uid", uid)
-		return user, nil
-	} else {
-		c.logger.Debug("User cache miss", "uid", uid)
-	}
-
-	// If not found in cache, fetch group infos from API
 	gitlabUser, _, err := c.client.Users.GetUser(uid, gitlab.GetUsersOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user with id %v: %v", uid, err)
 	}
-	newUser := User{
+	return &User{
 		ID:   gitlabUser.ID,
 		Name: gitlabUser.Username,
-
-		childProjects: nil,
-	}
-
-	// save in cache
-	c.userCacheMux.Lock()
-	c.userCache[uid] = &newUser
-	c.userCacheMux.Unlock()
-
-	return &newUser, nil
+	}, nil
 }
 
-func (c *gitlabClient) fetchUserContent(ctx context.Context, user *User) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
-	// Only a single routine can fetch the user content at the time.
-	// We lock for the whole duration of the function to avoid fetching the same data from the API
-	// multiple times if concurrent calls where to occur.
-	user.mux.Lock()
-	defer user.mux.Unlock()
+func (c *gitlabClient) fetchUserContent(ctx context.Context, uid uint64) (types.GroupContent, error) {
+	childProjects := make(map[string]types.RepositorySource)
 
-	// Get cached data if available
-	// TODO: cache cache invalidation?
-	if user.childProjects == nil {
-		childProjects := make(map[string]fstree.RepositorySource)
-
-		// Fetch the user repositories
-		listProjectOpt := &gitlab.ListProjectsOptions{
-			ListOptions: gitlab.ListOptions{
-				Page:    1,
-				PerPage: 100,
-			}}
-		for {
-			gitlabProjects, response, err := c.client.Projects.ListUserProjects(user.ID, listProjectOpt)
-			if err != nil {
-				return nil, nil, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
-			}
-			for _, gitlabProject := range gitlabProjects {
-				project := c.newProjectFromGitlabProject(ctx, gitlabProject)
-				if project != nil {
-					childProjects[project.Path] = project
-				}
-			}
-			if response.CurrentPage >= response.TotalPages {
-				break
-			}
-			// Get the next page
-			listProjectOpt.Page = response.NextPage
+	// Fetch the user repositories
+	listProjectOpt := &gitlab.ListProjectsOptions{
+		ListOptions: gitlab.ListOptions{
+			Page:    1,
+			PerPage: 100,
+		}}
+	for {
+		gitlabProjects, response, err := c.client.Projects.ListUserProjects(uid, listProjectOpt)
+		if err != nil {
+			return types.GroupContent{}, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
 		}
-
-		user.childProjects = childProjects
+		for _, gitlabProject := range gitlabProjects {
+			project := c.newProjectFromGitlabProject(gitlabProject)
+			if project != nil {
+				childProjects[project.GetRepositoryName()] = project
+			}
+		}
+		if response.CurrentPage >= response.TotalPages {
+			break
+		}
+		// Get the next page
+		listProjectOpt.Page = response.NextPage
 	}
-	return make(map[string]fstree.GroupSource), user.childProjects, nil
+	return types.GroupContent{
+		Groups:       make(map[string]types.GroupSource),
+		Repositories: childProjects,
+	}, nil
 }
