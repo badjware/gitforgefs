@@ -38,7 +38,8 @@ func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) *Pro
 	}
 	p := Project{
 		ID:            project.ID,
-		Path:          project.Path,
+		Name:          project.Name,
+		Path:          project.PathWithNamespace,
 		DefaultBranch: project.DefaultBranch,
 	}
 	if p.DefaultBranch == "" {

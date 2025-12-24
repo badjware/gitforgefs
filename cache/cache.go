@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 type Cache struct {
 	backend types.GitForge
+	logger  *slog.Logger
 
 	rootContentLock   sync.RWMutex
 	cachedRootContent map[string]types.GroupSource
@@ -18,9 +20,10 @@ type Cache struct {
 	cachedContent map[string]CachedContent
 }
 
-func NewForgeCache(backend types.GitForge) types.GitForge {
+func NewForgeCache(backend types.GitForge, logger *slog.Logger) types.GitForge {
 	return &Cache{
 		backend: backend,
+		logger:  logger,
 
 		cachedContent: map[string]CachedContent{},
 	}
@@ -43,6 +46,7 @@ func (c *Cache) FetchRootGroupContent(ctx context.Context) (map[string]types.Gro
 		// check to make sure the data is still not there,
 		// since RWMutex is not upgradeable and another thread may have grabbed the lock in the meantime
 		if c.cachedRootContent == nil {
+			c.logger.Info("Fetching root content from backend")
 			content, err := c.backend.FetchRootGroupContent(ctx)
 			if err != nil {
 				return nil, err
@@ -56,9 +60,13 @@ func (c *Cache) FetchRootGroupContent(ctx context.Context) (map[string]types.Gro
 }
 
 func (c *Cache) FetchGroupContent(ctx context.Context, source types.GroupSource) (types.GroupContent, error) {
+	logger := c.logger.With("groupID", source.GetGroupID()).With("groupPath", source.GetGroupPath())
+
 	c.contentLock.RLock()
 	if cachedContent, found := c.cachedContent[source.GetGroupPath()]; !found {
 		c.contentLock.RUnlock()
+
+		logger.Debug("Cache miss")
 
 		// acquire write lock
 		c.contentLock.Lock()
@@ -70,6 +78,7 @@ func (c *Cache) FetchGroupContent(ctx context.Context, source types.GroupSource)
 		}
 
 		// fetch content from backend and cache it
+		logger.Info("Fetching content from backend")
 		content, err := c.backend.FetchGroupContent(ctx, source)
 		if err != nil {
 			return types.GroupContent{}, err
@@ -81,6 +90,7 @@ func (c *Cache) FetchGroupContent(ctx context.Context, source types.GroupSource)
 		return content, nil
 	} else {
 		c.contentLock.RUnlock()
+		logger.Debug("Cache hit")
 		return cachedContent.GroupContent, nil
 	}
 }

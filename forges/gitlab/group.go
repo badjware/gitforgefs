@@ -34,7 +34,7 @@ func (c *gitlabClient) newGroupFromGitlabGroup(gitlabGroup *gitlab.Group) *Group
 	}
 }
 
-func (c *gitlabClient) fetchGroup(ctx context.Context, gid uint64) (*Group, error) {
+func (c *gitlabClient) fetchGroup(ctx context.Context, gid int) (*Group, error) {
 	gitlabGroup, _, err := c.client.Groups.GetGroup(gid, &gitlab.GetGroupOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch group with id %v: %v", gid, err)
@@ -43,7 +43,7 @@ func (c *gitlabClient) fetchGroup(ctx context.Context, gid uint64) (*Group, erro
 	return c.newGroupFromGitlabGroup(gitlabGroup), nil
 }
 
-func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid uint64) (types.GroupContent, error) {
+func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid int) (types.GroupContent, error) {
 	childGroups := make(map[string]types.GroupSource)
 	childProjects := make(map[string]types.RepositorySource)
 

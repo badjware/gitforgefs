@@ -83,8 +83,8 @@ func (c *gitlabClient) FetchRootGroupContent(ctx context.Context) (map[string]ty
 
 func (c *gitlabClient) FetchGroupContent(ctx context.Context, source types.GroupSource) (types.GroupContent, error) {
 	if _, found := c.users[source.GetGroupPath()]; found {
-		return c.fetchUserContent(ctx, source.GetGroupID())
+		return c.fetchUserContent(ctx, int(source.GetGroupID()))
 	} else {
-		return c.fetchGroupContent(ctx, source.GetGroupID())
+		return c.fetchGroupContent(ctx, int(source.GetGroupID()))
 	}
 }
