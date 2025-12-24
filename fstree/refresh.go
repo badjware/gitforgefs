@@ -11,7 +11,8 @@ import (
 
 type refreshNode struct {
 	fs.Inode
-	ino uint64
+	ino   uint64
+	param *FSParam
 
 	source types.RepositoryGroupSource
 }
@@ -26,6 +27,7 @@ func newRefreshNode(source types.RepositoryGroupSource, param *FSParam) *refresh
 	return &refreshNode{
 		ino:    0,
 		source: source,
+		param:  param,
 	}
 }
 
@@ -42,7 +44,6 @@ func (n *refreshNode) Setattr(ctx context.Context, fh fs.FileHandle, in *fuse.Se
 }
 
 func (n *refreshNode) Open(ctx context.Context, flags uint32) (fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
-	// FIXME
-	// n.source.InvalidateContentCache()
+	n.param.Backend.InvalidateCache(n.source)
 	return nil, 0, 0
 }
