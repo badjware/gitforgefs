@@ -39,7 +39,7 @@ func newGroupNodeFromSource(ctx context.Context, source types.RepositoryGroupSou
 }
 
 func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
-	content, err := n.param.GitForge.FetchGroupContent(ctx, n.source)
+	content, err := n.param.Backend.FetchGroupContent(ctx, n.source)
 	if err != nil {
 		n.param.logger.Error(err.Error())
 	}
@@ -70,7 +70,7 @@ func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 }
 
 func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	content, err := n.param.GitForge.FetchGroupContent(ctx, n.source)
+	content, err := n.param.Backend.FetchGroupContent(ctx, n.source)
 	if err != nil {
 		n.param.logger.Error(err.Error())
 	} else {

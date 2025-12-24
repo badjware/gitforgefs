@@ -130,7 +130,7 @@ func TestInvalidateCache(t *testing.T) {
 		t.Fatalf("first FetchGroupContent failed: %v", err)
 	}
 
-	c.InvalidateCache(src.GetGroupPath())
+	c.InvalidateCache(src)
 
 	if _, err := c.FetchGroupContent(ctx, src); err != nil {
 		t.Fatalf("second FetchGroupContent failed: %v", err)

@@ -115,7 +115,7 @@ func main() {
 		&fstree.FSParam{
 			UseSymlinks: loadedConfig.FS.UseSymlinks,
 			GitClient:   gitClient,
-			GitForge:    cache,
+			Backend:     cache,
 		},
 		*debug,
 	)

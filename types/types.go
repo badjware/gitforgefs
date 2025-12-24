@@ -4,9 +4,18 @@ import (
 	"context"
 )
 
+type GitClient interface {
+	FetchLocalRepositoryPath(ctx context.Context, source RepositorySource) (string, error)
+}
+
 type GitForge interface {
 	FetchRootGroupContent(ctx context.Context) (map[string]RepositoryGroupSource, error)
 	FetchGroupContent(ctx context.Context, source RepositoryGroupSource) (RepositoryGroupContent, error)
+}
+
+type GitForgeCacher interface {
+	GitForge
+	InvalidateCache(source RepositoryGroupSource)
 }
 
 type RepositoryGroupSource interface {
