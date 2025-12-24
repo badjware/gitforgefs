@@ -1,7 +1,6 @@
 package gitea
 
 import (
-	"context"
 	"path"
 
 	"code.gitea.io/sdk/gitea"
@@ -19,6 +18,10 @@ func (r *Repository) GetRepositoryID() uint64 {
 	return uint64(r.ID)
 }
 
+func (r *Repository) GetRepositoryName() string {
+	return r.Path
+}
+
 func (r *Repository) GetCloneURL() string {
 	return r.CloneURL
 }
@@ -27,7 +30,7 @@ func (r *Repository) GetDefaultBranch() string {
 	return r.DefaultBranch
 }
 
-func (c *giteaClient) newRepositoryFromGiteaRepository(ctx context.Context, repository *gitea.Repository) *Repository {
+func (c *giteaClient) newRepositoryFromGiteaRepository(repository *gitea.Repository) *Repository {
 	if c.ArchivedRepoHandling == config.ArchivedProjectIgnore && repository.Archived {
 		return nil
 	}

@@ -7,12 +7,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/badjware/gitforgefs/cache"
 	"github.com/badjware/gitforgefs/config"
 	"github.com/badjware/gitforgefs/forges/gitea"
 	"github.com/badjware/gitforgefs/forges/github"
 	"github.com/badjware/gitforgefs/forges/gitlab"
 	"github.com/badjware/gitforgefs/fstree"
 	"github.com/badjware/gitforgefs/git"
+	"github.com/badjware/gitforgefs/types"
 )
 
 func main() {
@@ -74,7 +76,8 @@ func main() {
 	}
 	gitClient, _ := git.NewClient(logger, *gitClientParam)
 
-	var gitForgeClient fstree.GitForge
+	// setup backend
+	var gitForgeClient types.GitForge
 	if loadedConfig.FS.Forge == config.ForgeGitlab {
 		// Create the gitlab client
 		gitlabClientConfig, err := config.MakeGitlabConfig(loadedConfig)
@@ -101,6 +104,9 @@ func main() {
 		gitForgeClient, _ = gitea.NewClient(logger, *giteaClientConfig)
 	}
 
+	// setup cache
+	cache := cache.NewForgeCache(gitForgeClient)
+
 	// Start the filesystem
 	err = fstree.Start(
 		logger,
@@ -109,7 +115,7 @@ func main() {
 		&fstree.FSParam{
 			UseSymlinks: loadedConfig.FS.UseSymlinks,
 			GitClient:   gitClient,
-			GitForge:    gitForgeClient,
+			GitForge:    cache,
 		},
 		*debug,
 	)

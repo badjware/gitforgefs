@@ -10,8 +10,8 @@ import (
 	"strconv"
 
 	"github.com/badjware/gitforgefs/config"
-	"github.com/badjware/gitforgefs/fstree"
 	"github.com/badjware/gitforgefs/queue"
+	"github.com/badjware/gitforgefs/types"
 	"github.com/badjware/gitforgefs/utils"
 )
 
@@ -62,7 +62,7 @@ func NewClient(logger *slog.Logger, p config.GitClientConfig) (*gitClient, error
 	return c, nil
 }
 
-func (c *gitClient) FetchLocalRepositoryPath(ctx context.Context, source fstree.RepositorySource) (localRepoLoc string, err error) {
+func (c *gitClient) FetchLocalRepositoryPath(ctx context.Context, source types.RepositorySource) (localRepoLoc string, err error) {
 	rid := source.GetRepositoryID()
 	cloneUrl := source.GetCloneURL()
 	defaultBranch := source.GetDefaultBranch()

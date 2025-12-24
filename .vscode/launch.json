@@ -10,8 +10,9 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceRoot}",
+            "buildFlags": "-race",
             "args": [
-                "-debug",
+                // "-debug",
                 "-config",
                 "${workspaceRoot}/config.yaml"
             ]

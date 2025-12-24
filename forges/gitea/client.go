@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"sync"
 
 	"code.gitea.io/sdk/gitea"
 	"github.com/badjware/gitforgefs/config"
-	"github.com/badjware/gitforgefs/fstree"
+	"github.com/badjware/gitforgefs/types"
 )
 
 type giteaClient struct {
@@ -17,15 +16,8 @@ type giteaClient struct {
 
 	logger *slog.Logger
 
-	rootContent map[string]fstree.GroupSource
-
-	// API response cache
-	organizationCacheMux    sync.RWMutex
-	organizationNameToIDMap map[string]int64
-	organizationCache       map[int64]*Organization
-	userCacheMux            sync.RWMutex
-	userNameToIDMap         map[string]int64
-	userCache               map[int64]*User
+	// use a map without values for efficient lookups
+	users map[string]struct{}
 }
 
 func NewClient(logger *slog.Logger, config config.GiteaClientConfig) (*giteaClient, error) {
@@ -40,12 +32,7 @@ func NewClient(logger *slog.Logger, config config.GiteaClientConfig) (*giteaClie
 
 		logger: logger,
 
-		rootContent: nil,
-
-		organizationNameToIDMap: map[string]int64{},
-		organizationCache:       map[int64]*Organization{},
-		userNameToIDMap:         map[string]int64{},
-		userCache:               map[int64]*User{},
+		users: make(map[string]struct{}),
 	}
 
 	// Fetch current user and add it to the list
@@ -53,45 +40,41 @@ func NewClient(logger *slog.Logger, config config.GiteaClientConfig) (*giteaClie
 	if err != nil {
 		logger.Warn("failed to fetch the current user:", "error", err.Error())
 	} else {
-		giteaClient.UserNames = append(giteaClient.UserNames, *&currentUser.UserName)
+		giteaClient.UserNames = append(giteaClient.UserNames, currentUser.UserName)
 	}
 
 	return giteaClient, nil
 }
 
-func (c *giteaClient) FetchRootGroupContent(ctx context.Context) (map[string]fstree.GroupSource, error) {
-	if c.rootContent == nil {
-		rootContent := make(map[string]fstree.GroupSource)
+func (c *giteaClient) FetchRootGroupContent(ctx context.Context) (map[string]types.GroupSource, error) {
+	rootContent := make(map[string]types.GroupSource)
 
-		for _, orgName := range c.GiteaClientConfig.OrgNames {
-			org, err := c.fetchOrganization(ctx, orgName)
-			if err != nil {
-				c.logger.Warn(err.Error())
-			} else {
-				rootContent[org.Name] = org
-			}
+	for _, orgName := range c.GiteaClientConfig.OrgNames {
+		org, err := c.fetchOrganization(ctx, orgName)
+		if err != nil {
+			c.logger.Warn(err.Error())
+		} else {
+			rootContent[org.Name] = org
 		}
-
-		for _, userName := range c.GiteaClientConfig.UserNames {
-			user, err := c.fetchUser(ctx, userName)
-			if err != nil {
-				c.logger.Warn(err.Error())
-			} else {
-				rootContent[user.Name] = user
-			}
-		}
-
-		c.rootContent = rootContent
 	}
-	return c.rootContent, nil
+
+	for _, userName := range c.GiteaClientConfig.UserNames {
+		user, err := c.fetchUser(ctx, userName)
+		if err != nil {
+			c.logger.Warn(err.Error())
+		} else {
+			rootContent[user.Name] = user
+			c.users[user.Name] = struct{}{}
+		}
+	}
+
+	return rootContent, nil
 }
 
-func (c *giteaClient) FetchGroupContent(ctx context.Context, gid uint64) (map[string]fstree.GroupSource, map[string]fstree.RepositorySource, error) {
-	if org, found := c.organizationCache[int64(gid)]; found {
-		return c.fetchOrganizationContent(ctx, org)
+func (c *giteaClient) FetchGroupContent(ctx context.Context, source types.GroupSource) (types.GroupContent, error) {
+	if _, found := c.users[source.GetGroupPath()]; found {
+		return c.fetchUserContent(ctx, source.GetGroupPath())
+	} else {
+		return c.fetchOrganizationContent(ctx, source.GetGroupPath())
 	}
-	if user, found := c.userCache[int64(gid)]; found {
-		return c.fetchUserContent(ctx, user)
-	}
-	return nil, nil, fmt.Errorf("invalid gid: %v", gid)
 }
