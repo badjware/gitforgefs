@@ -1,3 +1,7 @@
+# v1.1.1
+* Fix a crash when `archived_project_handling` is set to "hidden" in gitlab
+* Refactored caching, laying the groundwork for automatic cache invalidation.
+
 # v1.1.0
 
 * Now default to using a loopback instead of symlinks. This should improve compatibility.
