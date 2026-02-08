@@ -3,14 +3,16 @@ package gitlab
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/badjware/gitforgefs/types"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 type User struct {
-	ID   int
-	Name string
+	ID           int
+	Name         string
+	LastModified time.Time
 }
 
 func (u *User) GetGroupID() uint64 {
@@ -25,14 +27,23 @@ func (u *User) GetGroupPath() string {
 	return u.Name
 }
 
+func (u *User) GetLastModified() time.Time {
+	return u.LastModified
+}
+
 func (c *gitlabClient) fetchUser(ctx context.Context, uid int) (*User, error) {
 	gitlabUser, _, err := c.client.Users.GetUser(uid, gitlab.GetUsersOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user with id %v: %v", uid, err)
 	}
+	lastModified := time.Time{}
+	if gitlabUser.CreatedAt != nil {
+		lastModified = *gitlabUser.CreatedAt
+	}
 	return &User{
-		ID:   gitlabUser.ID,
-		Name: gitlabUser.Username,
+		ID:           gitlabUser.ID,
+		Name:         gitlabUser.Username,
+		LastModified: lastModified,
 	}, nil
 }
 

@@ -23,6 +23,9 @@ var _ = (fs.NodeReaddirer)((*groupNode)(nil))
 // Ensure we are implementing the NodeLookuper interface
 var _ = (fs.NodeLookuper)((*groupNode)(nil))
 
+// Ensure we are implementing the NodeGetattrer interface
+var _ = (fs.NodeGetattrer)((*groupNode)(nil))
+
 func newGroupNodeFromSource(ctx context.Context, source types.RepositoryGroupSource, param *FSParam) (fs.InodeEmbedder, error) {
 	node := &groupNode{
 		param:  param,
@@ -106,4 +109,9 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 	}
 
 	return nil, syscall.ENOENT
+}
+
+func (n *groupNode) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+	out.Mtime = uint64(n.source.GetLastModified().Unix())
+	return 0
 }

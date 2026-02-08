@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"time"
 )
 
 type GitClient interface {
@@ -22,12 +23,14 @@ type RepositoryGroupSource interface {
 	GetGroupID() uint64
 	GetGroupName() string
 	GetGroupPath() string
+	GetLastModified() time.Time
 }
 
 type RepositorySource interface {
 	GetRepositoryID() uint64
 	GetRepositoryName() string
 	GetRepositoryPath() string
+	GetLastModified() time.Time
 	GetCloneURL() string
 	GetDefaultBranch() string
 }
