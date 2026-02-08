@@ -10,6 +10,7 @@ import (
 
 	"github.com/badjware/gitforgefs/types"
 	"github.com/hanwen/go-fuse/v2/fs"
+	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
 type repositorySymlinkNode struct {
@@ -19,8 +20,11 @@ type repositorySymlinkNode struct {
 	source types.RepositorySource
 }
 
-// Ensure we are implementing the NodeReaddirer interface
+// Ensure we are implementing the NodeReadlinker interface
 var _ = (fs.NodeReadlinker)((*repositorySymlinkNode)(nil))
+
+// Ensure we are implementing the NodeGetattrer interface
+var _ = (fs.NodeGetattrer)((*repositorySymlinkNode)(nil))
 
 func newRepositoryNodeFromSource(ctx context.Context, source types.RepositorySource, param *FSParam) (fs.InodeEmbedder, error) {
 	if param.UseSymlinks {
@@ -63,4 +67,9 @@ func (n *repositorySymlinkNode) Readlink(ctx context.Context) ([]byte, syscall.E
 		return nil, syscall.EIO
 	}
 	return []byte(localRepositoryPath), 0
+}
+
+func (n *repositorySymlinkNode) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+	out.Mtime = uint64(n.source.GetLastModified().Unix())
+	return 0
 }

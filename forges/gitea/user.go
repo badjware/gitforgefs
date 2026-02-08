@@ -3,14 +3,16 @@ package gitea
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"code.gitea.io/sdk/gitea"
 	"github.com/badjware/gitforgefs/types"
 )
 
 type User struct {
-	ID   int64
-	Name string
+	ID           int64
+	Name         string
+	LastModified time.Time
 }
 
 func (u *User) GetGroupID() uint64 {
@@ -23,6 +25,10 @@ func (u *User) GetGroupName() string {
 
 func (u *User) GetGroupPath() string {
 	return u.Name
+}
+
+func (u *User) GetLastModified() time.Time {
+	return u.LastModified
 }
 
 func (c *giteaClient) fetchUser(ctx context.Context, userName string) (*User, error) {

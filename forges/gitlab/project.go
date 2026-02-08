@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"path"
+	"time"
 
 	"github.com/badjware/gitforgefs/config"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -11,6 +12,7 @@ type Project struct {
 	ID            int
 	Name          string
 	Path          string
+	LastModified  time.Time
 	CloneURL      string
 	DefaultBranch string
 }
@@ -27,6 +29,10 @@ func (p *Project) GetRepositoryPath() string {
 	return p.Path
 }
 
+func (p *Project) GetLastModified() time.Time {
+	return p.LastModified
+}
+
 func (p *Project) GetCloneURL() string {
 	return p.CloneURL
 }
@@ -40,10 +46,15 @@ func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) *Pro
 	if c.ArchivedProjectHandling == config.ArchivedProjectIgnore && project.Archived {
 		return nil
 	}
+	lastModified := time.Time{}
+	if project.UpdatedAt != nil {
+		lastModified = *project.UpdatedAt
+	}
 	p := Project{
 		ID:            project.ID,
 		Name:          project.Name,
 		Path:          project.PathWithNamespace,
+		LastModified:  lastModified,
 		DefaultBranch: project.DefaultBranch,
 	}
 	if p.DefaultBranch == "" {

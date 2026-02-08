@@ -2,6 +2,7 @@ package github
 
 import (
 	"path"
+	"time"
 
 	"github.com/badjware/gitforgefs/config"
 	"github.com/google/go-github/v63/github"
@@ -11,6 +12,7 @@ type Repository struct {
 	ID            int64
 	Name          string
 	Path          string
+	LastModified  time.Time
 	CloneURL      string
 	DefaultBranch string
 }
@@ -25,6 +27,10 @@ func (r *Repository) GetRepositoryName() string {
 
 func (r *Repository) GetRepositoryPath() string {
 	return r.Path
+}
+
+func (r *Repository) GetLastModified() time.Time {
+	return r.LastModified
 }
 
 func (r *Repository) GetCloneURL() string {
@@ -43,6 +49,7 @@ func (c *githubClient) newRepositoryFromGithubRepository(repository *github.Repo
 		ID:            *repository.ID,
 		Name:          *repository.Name,
 		Path:          *repository.FullName,
+		LastModified:  repository.UpdatedAt.Time,
 		DefaultBranch: *repository.DefaultBranch,
 	}
 	if r.DefaultBranch == "" {

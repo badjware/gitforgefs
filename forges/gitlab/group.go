@@ -3,15 +3,17 @@ package gitlab
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/badjware/gitforgefs/types"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 type Group struct {
-	ID   int
-	Name string
-	Path string
+	ID           int
+	Name         string
+	Path         string
+	LastModified time.Time
 }
 
 func (g *Group) GetGroupID() uint64 {
@@ -26,11 +28,20 @@ func (g *Group) GetGroupPath() string {
 	return g.Path
 }
 
+func (g *Group) GetLastModified() time.Time {
+	return g.LastModified
+}
+
 func (c *gitlabClient) newGroupFromGitlabGroup(gitlabGroup *gitlab.Group) *Group {
+	lastModified := time.Time{}
+	if gitlabGroup.CreatedAt != nil {
+		lastModified = *gitlabGroup.CreatedAt
+	}
 	return &Group{
-		ID:   gitlabGroup.ID,
-		Name: gitlabGroup.Path,
-		Path: gitlabGroup.FullPath,
+		ID:           gitlabGroup.ID,
+		Name:         gitlabGroup.Path,
+		Path:         gitlabGroup.FullPath,
+		LastModified: lastModified,
 	}
 }
 

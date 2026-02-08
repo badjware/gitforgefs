@@ -3,14 +3,16 @@ package github
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/badjware/gitforgefs/types"
 	"github.com/google/go-github/v63/github"
 )
 
 type Organization struct {
-	ID   int64
-	Name string
+	ID           int64
+	Name         string
+	LastModified time.Time
 }
 
 func (o *Organization) GetGroupID() uint64 {
@@ -25,14 +27,19 @@ func (o *Organization) GetGroupPath() string {
 	return o.Name
 }
 
+func (o *Organization) GetLastModified() time.Time {
+	return o.LastModified
+}
+
 func (c *githubClient) fetchOrganization(ctx context.Context, orgName string) (*Organization, error) {
 	githubOrg, _, err := c.client.Organizations.Get(ctx, orgName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch organization with name %v: %v", orgName, err)
 	}
 	return &Organization{
-		ID:   *githubOrg.ID,
-		Name: *githubOrg.Login,
+		ID:           *githubOrg.ID,
+		Name:         *githubOrg.Login,
+		LastModified: githubOrg.UpdatedAt.Time,
 	}, nil
 }
 
