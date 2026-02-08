@@ -11,7 +11,7 @@ fs:
 
   # Use a symlink to point to the real location of the repository instead of doing a loopback
   # Using symlinks is more performant and allow cloning to be asynchronous, but may cause compatibility issues with some applications
-  # use_symlinks: false
+  # use_symlinks: true
 
   # The git forge to use as the backend.
   # Must be one of "gitlab", "github", or "gitea"
