@@ -16,21 +16,20 @@ type Cache struct {
 	rootContentLock   sync.RWMutex
 	cachedRootContent map[string]types.RepositoryGroupSource
 
-	contentLock   sync.RWMutex
-	cachedContent map[string]CachedContent
+	// contentLock   sync.RWMutex
+	// cachedRepositoryGroupSource map[string]*CachedContent
+	cachedRepositoryGroupSource sync.Map
 }
 
 func NewForgeCache(backend types.GitForge, logger *slog.Logger) types.GitForgeCacher {
 	return &Cache{
 		backend: backend,
 		logger:  logger,
-
-		cachedContent: map[string]CachedContent{},
 	}
 }
 
 type CachedContent struct {
-	types.RepositoryGroupContent
+	GetContent   func() (types.RepositoryGroupContent, error)
 	creationTime time.Time
 }
 
@@ -59,46 +58,33 @@ func (c *Cache) FetchRootGroupContent(ctx context.Context) (map[string]types.Rep
 	return c.cachedRootContent, nil
 }
 
-// TODO: improve locking strategy
 func (c *Cache) FetchGroupContent(ctx context.Context, source types.RepositoryGroupSource) (types.RepositoryGroupContent, error) {
 	logger := c.logger.With("groupID", source.GetGroupID()).With("groupPath", source.GetGroupPath())
 
-	c.contentLock.RLock()
-	if cachedContent, found := c.cachedContent[source.GetGroupPath()]; !found {
-		c.contentLock.RUnlock()
-
-		logger.Debug("Cache miss")
-
-		// acquire write lock
-		c.contentLock.Lock()
-		defer c.contentLock.Unlock()
-
-		// read the map again to make sure the data is still not there
-		if cachedContent, found := c.cachedContent[source.GetGroupPath()]; found {
-			return cachedContent.RepositoryGroupContent, nil
-		}
-
-		// fetch content from backend and cache it
-		logger.Info("Fetching content from backend")
-		content, err := c.backend.FetchGroupContent(ctx, source)
-		if err != nil {
-			return types.RepositoryGroupContent{}, err
-		}
-		c.cachedContent[source.GetGroupPath()] = CachedContent{
-			RepositoryGroupContent: content,
-			creationTime:           time.Now(),
-		}
-		return content, nil
+	cachedContent := CachedContent{
+		GetContent: sync.OnceValues(func() (types.RepositoryGroupContent, error) {
+			logger.Info("Fetching content from backend")
+			return c.backend.FetchGroupContent(ctx, source)
+		}),
+		creationTime: time.Now(),
+	}
+	actual, loaded := c.cachedRepositoryGroupSource.LoadOrStore(source.GetGroupPath(), &cachedContent)
+	if loaded {
+		logger.Info("Cache hit")
+		// If already loaded, return the existing cached content or wait for it to be available
+		return actual.(*CachedContent).GetContent()
 	} else {
-		c.contentLock.RUnlock()
-		logger.Debug("Cache hit")
-		return cachedContent.RepositoryGroupContent, nil
+		logger.Info("Cache miss")
+		// Do the actual fetch in the background
+		content, err := cachedContent.GetContent()
+		if err != nil {
+			// If there was an error fetching the content, remove the cache entry to allow for retries
+			c.cachedRepositoryGroupSource.Delete(source.GetGroupPath())
+		}
+		return content, err
 	}
 }
 
 func (c *Cache) InvalidateCache(source types.RepositoryGroupSource) {
-	c.contentLock.Lock()
-	defer c.contentLock.Unlock()
-
-	delete(c.cachedContent, source.GetGroupPath())
+	c.cachedRepositoryGroupSource.Delete(source.GetGroupPath())
 }
