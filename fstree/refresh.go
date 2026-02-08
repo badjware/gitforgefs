@@ -31,10 +31,6 @@ func newRefreshNode(source types.RepositoryGroupSource, param *FSParam) *refresh
 	}
 }
 
-func (n *refreshNode) Ino() uint64 {
-	return n.ino
-}
-
 func (n *refreshNode) Mode() uint32 {
 	return fuse.S_IFREG
 }

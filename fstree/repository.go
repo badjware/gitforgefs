@@ -12,10 +12,6 @@ import (
 	"github.com/hanwen/go-fuse/v2/fs"
 )
 
-const (
-	repositoryBaseInode = 2_000_000_000
-)
-
 type repositorySymlinkNode struct {
 	fs.Inode
 	param *FSParam

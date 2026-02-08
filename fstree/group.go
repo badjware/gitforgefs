@@ -9,10 +9,6 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
-const (
-	groupBaseInode = 1_000_000_000
-)
-
 type groupNode struct {
 	fs.Inode
 	param *FSParam
@@ -45,24 +41,21 @@ func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 	}
 
 	entries := make([]fuse.DirEntry, 0, len(content.Groups)+len(content.Repositories)+len(n.staticNodes))
-	for groupName, group := range content.Groups {
+	for groupName := range content.Groups {
 		entries = append(entries, fuse.DirEntry{
 			Name: groupName,
-			Ino:  group.GetGroupID() + groupBaseInode,
 			Mode: fuse.S_IFDIR,
 		})
 	}
-	for repositoryName, repository := range content.Repositories {
+	for repositoryName := range content.Repositories {
 		entries = append(entries, fuse.DirEntry{
 			Name: repositoryName,
-			Ino:  repository.GetRepositoryID() + repositoryBaseInode,
 			Mode: fuse.S_IFLNK,
 		})
 	}
 	for name, staticNode := range n.staticNodes {
 		entries = append(entries, fuse.DirEntry{
 			Name: name,
-			Ino:  staticNode.Ino(),
 			Mode: staticNode.Mode(),
 		})
 	}
@@ -78,7 +71,6 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		group, found := content.Groups[name]
 		if found {
 			attrs := fs.StableAttr{
-				Ino:  group.GetGroupID() + groupBaseInode,
 				Mode: fuse.S_IFDIR,
 			}
 			groupNode, _ := newGroupNodeFromSource(ctx, group, n.param)
@@ -88,9 +80,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		// Check if the map of projects contains it
 		repository, found := content.Repositories[name]
 		if found {
-			attrs := fs.StableAttr{
-				Ino: repository.GetRepositoryID() + repositoryBaseInode,
-			}
+			attrs := fs.StableAttr{}
 			if n.param.UseSymlinks {
 				attrs.Mode = fuse.S_IFLNK
 			} else {
@@ -109,7 +99,6 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		staticNode, ok := n.staticNodes[name]
 		if ok {
 			attrs := fs.StableAttr{
-				Ino:  staticNode.Ino(),
 				Mode: staticNode.Mode(),
 			}
 			return n.NewInode(ctx, staticNode, attrs), 0
