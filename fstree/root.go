@@ -15,7 +15,6 @@ import (
 
 type staticNode interface {
 	fs.InodeEmbedder
-	Ino() uint64
 	Mode() uint32
 }
 
@@ -74,7 +73,6 @@ func (n *rootNode) OnAdd(ctx context.Context) {
 			ctx,
 			groupNode,
 			fs.StableAttr{
-				Ino:  group.GetGroupID() + groupBaseInode,
 				Mode: fuse.S_IFDIR,
 			},
 		)
