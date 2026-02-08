@@ -90,7 +90,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		FS: FSConfig{
 			Mountpoint:   "",
 			MountOptions: "nodev,nosuid",
-			UseSymlinks:  false,
+			UseSymlinks:  true,
 			Forge:        "",
 		},
 		Gitlab: GitlabClientConfig{
