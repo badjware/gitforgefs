@@ -52,7 +52,7 @@ func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) *Pro
 	}
 	p := Project{
 		ID:            project.ID,
-		Name:          project.Name,
+		Name:          project.Path,
 		Path:          project.PathWithNamespace,
 		LastModified:  lastModified,
 		DefaultBranch: project.DefaultBranch,
