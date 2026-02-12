@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strings"
 
@@ -21,6 +23,7 @@ func main() {
 	configPath := flag.String("config", "config.yaml", "The config file")
 	mountoptionsFlag := flag.String("o", "", "Filesystem mount options. See mount.fuse(8)")
 	debug := flag.Bool("debug", false, "Enable debug logging")
+	debugPort := flag.Int("debug-port", 0, "Listen port for debug server. If 0, server is disabled")
 
 	flag.Usage = func() {
 		fmt.Println("USAGE:")
@@ -46,6 +49,17 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: level,
 	}))
+
+	// start pprof server if debug port is set
+	if *debugPort != 0 {
+		go func() {
+			logger.Info("Starting debug server", "port", *debugPort)
+			err := http.ListenAndServe(fmt.Sprintf("localhost:%d", *debugPort), nil)
+			if err != nil {
+				logger.Error("debug server failed", "error", err)
+			}
+		}()
+	}
 
 	// Configure mountpoint
 	mountpoint := loadedConfig.FS.Mountpoint
