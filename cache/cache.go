@@ -70,7 +70,7 @@ func (c *Cache) FetchGroupContent(ctx context.Context, source types.RepositoryGr
 	}
 	actual, loaded := c.cachedRepositoryGroupSource.LoadOrStore(source.GetGroupPath(), &cachedContent)
 	if loaded {
-		logger.Info("Cache hit")
+		logger.Debug("Cache hit")
 		// If already loaded, return the existing cached content or wait for it to be available
 		return actual.(*CachedContent).GetContent()
 	} else {
