@@ -13,6 +13,8 @@
             "buildFlags": "-race",
             "args": [
                 // "-debug",
+                "-debug-port",
+                "6060",
                 "-config",
                 "${workspaceRoot}/config.yaml"
             ]
