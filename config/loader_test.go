@@ -19,6 +19,7 @@ func TestLoadConfig(t *testing.T) {
 					Mountpoint:   "/tmp/gitforgefs/test/mnt/gitlab",
 					MountOptions: "nodev",
 					Forge:        "gitlab",
+					UseSymlinks:  true,
 				},
 				Gitlab: config.GitlabClientConfig{
 					URL:                     "https://example.com",

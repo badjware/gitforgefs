@@ -2,6 +2,7 @@ fs:
   mountpoint: /tmp/gitforgefs/test/mnt/gitlab
   mountoptions: nodev
   forge: gitlab
+  use_symlinks: true
 
 gitlab:
   url: https://example.com
