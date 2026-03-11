@@ -64,7 +64,12 @@ func (n *repositorySymlinkNode) Readlink(ctx context.Context) ([]byte, syscall.E
 	localRepositoryPath, err := n.param.GitClient.FetchLocalRepositoryPath(ctx, n.source)
 	if err != nil {
 		n.param.logger.Error(err.Error())
-		return nil, syscall.EIO
+		if ctx.Err() != nil {
+			return nil, syscall.EINTR
+		} else {
+			// TODO: return the proper errno for the error
+			return nil, syscall.EIO
+		}
 	}
 	return []byte(localRepositoryPath), 0
 }

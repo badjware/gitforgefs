@@ -51,10 +51,18 @@ func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 		})
 	}
 	for repositoryName := range content.Repositories {
-		entries = append(entries, fuse.DirEntry{
-			Name: repositoryName,
-			Mode: fuse.S_IFLNK,
-		})
+		if n.param.UseSymlinks {
+			entries = append(entries, fuse.DirEntry{
+				Name: repositoryName,
+				Mode: fuse.S_IFLNK,
+			})
+		} else {
+			entries = append(entries, fuse.DirEntry{
+				Name: repositoryName,
+				Mode: fuse.S_IFDIR,
+			})
+		}
+
 	}
 	for name, staticNode := range n.staticNodes {
 		entries = append(entries, fuse.DirEntry{
@@ -69,6 +77,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 	content, err := n.param.Backend.FetchGroupContent(ctx, n.source)
 	if err != nil {
 		n.param.logger.Error(err.Error())
+		return nil, syscall.EIO
 	} else {
 		// Check if the map of groups contains it
 		group, found := content.Groups[name]
@@ -88,12 +97,21 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 				attrs.Mode = fuse.S_IFLNK
 			} else {
 				attrs.Mode = fuse.S_IFDIR
+
+				// // Set gen as a workaround for ino collisions when using loopback nodes. See
+				// // https://github.com/hanwen/go-fuse/issues/592#issuecomment-3650851207
+				// Gen: n.param.gen.Add(1),
 			}
+
 			repositoryNode, err := newRepositoryNodeFromSource(ctx, repository, n.param)
 			if err != nil {
 				n.param.logger.Error(err.Error())
-				// TODO: return the proper errno for the error
-				return nil, syscall.EIO
+				if ctx.Err() != nil {
+					return nil, syscall.EINTR
+				} else {
+					// TODO: return the proper errno for the error
+					return nil, syscall.EIO
+				}
 			}
 			return n.NewInode(ctx, repositoryNode, attrs), 0
 		}
@@ -108,6 +126,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		}
 	}
 
+	n.param.logger.Warn("Not found", "name", name)
 	return nil, syscall.ENOENT
 }
 
