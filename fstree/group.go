@@ -9,6 +9,10 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
+const (
+	groupBaseInode = 1_000_000_000
+)
+
 type groupNode struct {
 	fs.Inode
 	param *FSParam
@@ -44,22 +48,25 @@ func (n *groupNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 	}
 
 	entries := make([]fuse.DirEntry, 0, len(content.Groups)+len(content.Repositories)+len(n.staticNodes))
-	for groupName := range content.Groups {
+	for groupName, group := range content.Groups {
 		entries = append(entries, fuse.DirEntry{
 			Name: groupName,
 			Mode: fuse.S_IFDIR,
+			Ino:  group.GetGroupID() + groupBaseInode,
 		})
 	}
-	for repositoryName := range content.Repositories {
+	for repositoryName, repository := range content.Repositories {
 		if n.param.UseSymlinks {
 			entries = append(entries, fuse.DirEntry{
 				Name: repositoryName,
 				Mode: fuse.S_IFLNK,
+				Ino:  repository.GetRepositoryID() + repositoryBaseInode,
 			})
 		} else {
 			entries = append(entries, fuse.DirEntry{
 				Name: repositoryName,
 				Mode: fuse.S_IFDIR,
+				Ino:  repository.GetRepositoryID() + repositoryBaseInode,
 			})
 		}
 
@@ -84,6 +91,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		if found {
 			attrs := fs.StableAttr{
 				Mode: fuse.S_IFDIR,
+				Ino:  group.GetGroupID() + groupBaseInode,
 			}
 			groupNode, _ := newGroupNodeFromSource(ctx, group, n.param)
 			return n.NewInode(ctx, groupNode, attrs), 0
@@ -92,7 +100,9 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		// Check if the map of projects contains it
 		repository, found := content.Repositories[name]
 		if found {
-			attrs := fs.StableAttr{}
+			attrs := fs.StableAttr{
+				Ino: repository.GetRepositoryID() + repositoryBaseInode,
+			}
 			if n.param.UseSymlinks {
 				attrs.Mode = fuse.S_IFLNK
 			} else {
