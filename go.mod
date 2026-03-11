@@ -5,7 +5,8 @@ go 1.24.0
 require (
 	code.gitea.io/sdk/gitea v0.22.1
 	github.com/google/go-github/v63 v63.0.0
-	github.com/hanwen/go-fuse/v2 v2.9.0
+	// 2.9.0 has issue with loopback, need to be investigated.
+	github.com/hanwen/go-fuse/v2 v2.6.0
 	gitlab.com/gitlab-org/api/client-go v0.159.0
 	gopkg.in/yaml.v2 v2.4.0
 )
