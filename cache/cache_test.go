@@ -5,20 +5,23 @@ import (
 	"io"
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/badjware/gitforgefs/cache"
 	"github.com/badjware/gitforgefs/types"
 )
 
 type mockRepoGroupSource struct {
-	ID   uint64
-	Name string
-	Path string
+	ID           uint64
+	Name         string
+	Path         string
+	LastModified time.Time
 }
 
-func (m mockRepoGroupSource) GetGroupID() uint64   { return m.ID }
-func (m mockRepoGroupSource) GetGroupName() string { return m.Name }
-func (m mockRepoGroupSource) GetGroupPath() string { return m.Path }
+func (m mockRepoGroupSource) GetGroupID() uint64         { return m.ID }
+func (m mockRepoGroupSource) GetGroupName() string       { return m.Name }
+func (m mockRepoGroupSource) GetGroupPath() string       { return m.Path }
+func (m mockRepoGroupSource) GetLastModified() time.Time { return m.LastModified }
 
 type mockBackend struct {
 	RootCalls  int
@@ -45,7 +48,7 @@ func newLogger() *slog.Logger {
 func TestFetchRootGroupContent(t *testing.T) {
 	backend := &mockBackend{
 		rootContentValue: map[string]types.RepositoryGroupSource{
-			"g": mockRepoGroupSource{ID: 1, Name: "g", Path: "g"},
+			"g": mockRepoGroupSource{ID: 1, Name: "g", Path: "g", LastModified: time.Now()},
 		},
 	}
 
