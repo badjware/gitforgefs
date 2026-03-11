@@ -1,6 +1,11 @@
-# v1.1.1
+# v1.2.0
 * Fix a crash when `archived_project_handling` is set to "hidden" in gitlab
 * Refactored caching, laying the groundwork for automatic cache invalidation.
+* Default to symlink. Loopback mode is unstable.
+* Add modification date to folder and symlink attributes
+* Add stable inode based on the ids of the source
+* Add more debugging options
+* Improve loopback stability
 
 # v1.1.0
 
