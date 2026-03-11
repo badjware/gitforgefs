@@ -6,6 +6,7 @@
 * Add stable inode based on the ids of the source
 * Add more debugging options
 * Improve loopback stability
+* Add `-version` flag to print the version
 
 # v1.1.0
 
