@@ -58,16 +58,16 @@ func newRepositoryNodeFromSource(ctx context.Context, source types.RepositorySou
 			var st syscall.Stat_t
 			err := syscall.Stat(localRepositoryPath, &st)
 			if err == nil {
-				rootData := &fs.LoopbackRoot{
-					Path: localRepositoryPath,
-					Dev:  st.Dev,
-				}
-				rootNode := &fs.LoopbackNode{
-					RootData: rootData,
-				}
-				rootData.RootNode = rootNode
-				return rootNode, nil
-				// return fs.NewLoopbackRoot(localRepositoryPath)
+				// rootData := &fs.LoopbackRoot{
+				// 	Path: localRepositoryPath,
+				// 	Dev:  st.Dev,
+				// }
+				// rootNode := &fs.LoopbackNode{
+				// 	RootData: rootData,
+				// }
+				// rootData.RootNode = rootNode
+				// return rootNode, nil
+				return fs.NewLoopbackRoot(localRepositoryPath)
 			} else if errors.Is(err, os.ErrNotExist) {
 				// wait for the file to be created
 				// TODO: think of a more efficient way of archiving this

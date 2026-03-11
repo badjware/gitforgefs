@@ -2,6 +2,7 @@ package fstree
 
 import (
 	"context"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/badjware/gitforgefs/types"
@@ -19,6 +20,7 @@ type groupNode struct {
 
 	source      types.RepositoryGroupSource
 	staticNodes map[string]staticNode
+	gen         atomic.Uint64
 }
 
 // Ensure we are implementing the NodeReaddirer interface
@@ -110,7 +112,7 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 
 				// Set gen as a workaround for ino collisions when using loopback nodes. See
 				// https://github.com/hanwen/go-fuse/issues/592#issuecomment-3650851207
-				attrs.Gen = n.param.gen.Add(1)
+				// attrs.Gen = n.gen.Add(1)
 			}
 
 			repositoryNode, err := newRepositoryNodeFromSource(ctx, repository, n.param)
