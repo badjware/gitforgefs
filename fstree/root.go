@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/badjware/gitforgefs/types"
@@ -20,6 +21,7 @@ type staticNode interface {
 
 type FSParam struct {
 	UseSymlinks bool
+	gen         atomic.Uint64
 
 	GitClient types.GitClient
 	Backend   types.GitForgeCacher
