@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"sync/atomic"
 	"syscall"
+	"time"
 
 	"github.com/badjware/gitforgefs/types"
 	"github.com/hanwen/go-fuse/v2/fs"
@@ -39,7 +40,11 @@ var _ = (fs.NodeOnAdder)((*rootNode)(nil))
 func Start(logger *slog.Logger, mountpoint string, mountoptions []string, param *FSParam, debug bool) error {
 	logger.Info("Mounting", "mountpoint", mountpoint)
 
-	opts := &fs.Options{}
+	sec := time.Second
+	opts := &fs.Options{
+		EntryTimeout: &sec,
+		AttrTimeout:  &sec,
+	}
 	opts.MountOptions.Options = mountoptions
 	opts.Debug = debug
 
