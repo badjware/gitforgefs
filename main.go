@@ -7,6 +7,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/badjware/gitforgefs/cache"
@@ -22,7 +23,8 @@ import (
 func main() {
 	configPath := flag.String("config", "config.yaml", "The config file")
 	mountoptionsFlag := flag.String("o", "", "Filesystem mount options. See mount.fuse(8)")
-	debug := flag.Bool("debug", false, "Enable debug logging")
+	versionFlag := flag.Bool("version", false, "Print version information and exit")
+	debugFlag := flag.Bool("debug", false, "Enable debug logging")
 	debugPort := flag.Int("debug-port", 0, "Listen port for debug server. If 0, server is disabled")
 
 	flag.Usage = func() {
@@ -33,6 +35,15 @@ func main() {
 	}
 	flag.Parse()
 
+	if *versionFlag {
+		version := "unknown"
+		if info, ok := debug.ReadBuildInfo(); ok {
+			version = info.Main.Version
+		}
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
 	loadedConfig, err := config.LoadConfig(*configPath)
 	if err != nil {
 		fmt.Println(err)
@@ -41,7 +52,7 @@ func main() {
 
 	// Get logger
 	var level slog.Level
-	if *debug {
+	if *debugFlag {
 		level = slog.LevelDebug
 	} else {
 		level = slog.LevelInfo
@@ -131,7 +142,7 @@ func main() {
 			GitClient:   gitClient,
 			Backend:     cache,
 		},
-		*debug,
+		*debugFlag,
 	)
 	if err != nil {
 		fmt.Println(err)
