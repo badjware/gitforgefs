@@ -10,7 +10,6 @@ import (
 
 	"github.com/badjware/gitforgefs/types"
 	"github.com/hanwen/go-fuse/v2/fs"
-	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
 const (
@@ -33,9 +32,6 @@ type repositorySymlinkNode struct {
 
 // Ensure we are implementing the NodeReadlinker interface
 var _ = (fs.NodeReadlinker)((*repositorySymlinkNode)(nil))
-
-// Ensure we are implementing the NodeGetattrer interface
-var _ = (fs.NodeGetattrer)((*repositorySymlinkNode)(nil))
 
 // Ensure we are implementing the NodeGetattrer interface
 // var _ = (fs.NodeWrapChilder)((*repositoryLoopbackNode)(nil))
@@ -98,11 +94,11 @@ func (n *repositorySymlinkNode) Readlink(ctx context.Context) ([]byte, syscall.E
 	return []byte(localRepositoryPath), 0
 }
 
-func (n *repositorySymlinkNode) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
-	out.Mtime = uint64(n.source.GetLastModified().Unix())
-	return 0
-}
-
 // func (n *repositoryLoopbackNode) WrapChild(ctx context.Context, ops fs.InodeEmbedder) fs.InodeEmbedder {
-// 	return &repositoryLoopbackNode{ops.(*fs.LoopbackNode), n.param, n.source}
+// 	return &repositoryLoopbackNode{
+// 		LoopbackNode: ops.(*fs.LoopbackNode),
+
+// 		param:  n.param,
+// 		source: n.source,
+// 	}
 // }
