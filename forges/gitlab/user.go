@@ -36,14 +36,14 @@ func (c *gitlabClient) fetchUser(ctx context.Context, uid int) (*User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user with id %v: %v", uid, err)
 	}
-	lastModified := time.Time{}
+	createdAt := time.Time{}
 	if gitlabUser.CreatedAt != nil {
-		lastModified = *gitlabUser.CreatedAt
+		createdAt = *gitlabUser.CreatedAt
 	}
 	return &User{
 		ID:           gitlabUser.ID,
 		Name:         gitlabUser.Username,
-		LastModified: lastModified,
+		LastModified: createdAt,
 	}, nil
 }
 

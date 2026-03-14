@@ -37,8 +37,9 @@ func (c *giteaClient) fetchOrganization(ctx context.Context, orgName string) (*O
 		return nil, fmt.Errorf("failed to fetch organization with name %v: %v", orgName, err)
 	}
 	newOrg := Organization{
-		ID:   giteaOrg.ID,
-		Name: giteaOrg.UserName,
+		ID:           giteaOrg.ID,
+		Name:         giteaOrg.UserName,
+		LastModified: time.Time{},
 	}
 
 	return &newOrg, nil

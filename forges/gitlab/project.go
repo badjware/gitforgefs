@@ -46,15 +46,15 @@ func (c *gitlabClient) newProjectFromGitlabProject(project *gitlab.Project) *Pro
 	if c.ArchivedProjectHandling == config.ArchivedProjectIgnore && project.Archived {
 		return nil
 	}
-	lastModified := time.Time{}
+	updatedAt := time.Time{}
 	if project.UpdatedAt != nil {
-		lastModified = *project.UpdatedAt
+		updatedAt = *project.UpdatedAt
 	}
 	p := Project{
 		ID:            project.ID,
 		Name:          project.Path,
 		Path:          project.PathWithNamespace,
-		LastModified:  lastModified,
+		LastModified:  updatedAt,
 		DefaultBranch: project.DefaultBranch,
 	}
 	if p.DefaultBranch == "" {
