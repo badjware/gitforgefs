@@ -95,6 +95,10 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 				Mode: fuse.S_IFDIR,
 				Ino:  group.GetGroupID() + groupBaseInode,
 			}
+			out.Atime = uint64(group.GetLastModified().Unix())
+			out.Mtime = uint64(group.GetLastModified().Unix())
+			out.Ctime = uint64(group.GetLastModified().Unix())
+
 			groupNode, _ := newGroupNodeFromSource(ctx, group, n.param)
 			return n.NewInode(ctx, groupNode, attrs), 0
 		}
@@ -105,10 +109,37 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 			attrs := fs.StableAttr{
 				Ino: repository.GetRepositoryID() + repositoryBaseInode,
 			}
+			out.Atime = uint64(repository.GetLastModified().Unix())
+			out.Mtime = uint64(repository.GetLastModified().Unix())
+			out.Ctime = uint64(repository.GetLastModified().Unix())
+
 			if n.param.UseSymlinks {
 				attrs.Mode = fuse.S_IFLNK
 			} else {
 				attrs.Mode = fuse.S_IFDIR
+
+				// fetch and mirror attrs from loopback
+				var st syscall.Stat_t
+				localRepositoryPath, err := n.param.GitClient.FetchLocalRepositoryPath(ctx, repository)
+				if err != nil {
+					n.param.logger.Error(err.Error())
+					if ctx.Err() != nil {
+						return nil, syscall.EINTR
+					} else {
+						// TODO: return the proper errno for the error
+						return nil, syscall.EIO
+					}
+				}
+				if err := syscall.Stat(localRepositoryPath, &st); err != nil {
+					n.param.logger.Warn("Failed to stat", "path", localRepositoryPath)
+					return nil, syscall.EIO
+				}
+				out.Size = uint64(st.Size)
+				out.Blocks = uint64(st.Blocks)
+				// wrong ownership may trigger "detected dubious ownership in repository" in git
+				out.Uid = st.Uid
+				out.Gid = st.Gid
+				out.Blksize = uint32(st.Blksize)
 
 				// Set gen as a workaround for ino collisions when using loopback nodes. See
 				// https://github.com/hanwen/go-fuse/issues/592#issuecomment-3650851207
@@ -138,11 +169,12 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 		}
 	}
 
-	n.param.logger.Warn("Not found", "name", name)
 	return nil, syscall.ENOENT
 }
 
 func (n *groupNode) Getattr(ctx context.Context, fh fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+	out.Atime = uint64(n.source.GetLastModified().Unix())
 	out.Mtime = uint64(n.source.GetLastModified().Unix())
+	out.Ctime = uint64(n.source.GetLastModified().Unix())
 	return 0
 }
