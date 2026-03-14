@@ -49,7 +49,7 @@ func (c *githubClient) newRepositoryFromGithubRepository(repository *github.Repo
 		ID:            *repository.ID,
 		Name:          *repository.Name,
 		Path:          *repository.FullName,
-		LastModified:  repository.UpdatedAt.Time,
+		LastModified:  repository.PushedAt.Time,
 		DefaultBranch: *repository.DefaultBranch,
 	}
 	if r.DefaultBranch == "" {

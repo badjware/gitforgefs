@@ -33,15 +33,15 @@ func (g *Group) GetLastModified() time.Time {
 }
 
 func (c *gitlabClient) newGroupFromGitlabGroup(gitlabGroup *gitlab.Group) *Group {
-	lastModified := time.Time{}
+	createdAt := time.Time{}
 	if gitlabGroup.CreatedAt != nil {
-		lastModified = *gitlabGroup.CreatedAt
+		createdAt = *gitlabGroup.CreatedAt
 	}
 	return &Group{
 		ID:           gitlabGroup.ID,
 		Name:         gitlabGroup.Path,
 		Path:         gitlabGroup.FullPath,
-		LastModified: lastModified,
+		LastModified: createdAt,
 	}
 }
 

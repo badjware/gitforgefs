@@ -39,7 +39,7 @@ func (c *githubClient) fetchUser(ctx context.Context, userName string) (*User, e
 	return &User{
 		ID:           *githubUser.ID,
 		Name:         *githubUser.Login,
-		LastModified: githubUser.UpdatedAt.Time,
+		LastModified: githubUser.CreatedAt.Time,
 	}, nil
 }
 

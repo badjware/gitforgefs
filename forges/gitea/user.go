@@ -37,8 +37,9 @@ func (c *giteaClient) fetchUser(ctx context.Context, userName string) (*User, er
 		return nil, fmt.Errorf("failed to fetch user with name %v: %v", userName, err)
 	}
 	newUser := User{
-		ID:   giteaUser.ID,
-		Name: giteaUser.UserName,
+		ID:           giteaUser.ID,
+		Name:         giteaUser.UserName,
+		LastModified: giteaUser.Created,
 	}
 
 	return &newUser, nil

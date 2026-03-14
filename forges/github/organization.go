@@ -39,7 +39,7 @@ func (c *githubClient) fetchOrganization(ctx context.Context, orgName string) (*
 	return &Organization{
 		ID:           *githubOrg.ID,
 		Name:         *githubOrg.Login,
-		LastModified: githubOrg.UpdatedAt.Time,
+		LastModified: githubOrg.CreatedAt.Time,
 	}, nil
 }
 
