@@ -2,11 +2,8 @@ package fstree
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"os"
 	"syscall"
-	"time"
 
 	"github.com/badjware/gitforgefs/types"
 	"github.com/hanwen/go-fuse/v2/fs"
@@ -51,34 +48,18 @@ func newRepositoryNodeFromSource(ctx context.Context, source types.RepositorySou
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch local repository path: %w", err)
 		}
-		// The path must exist to successfully create a loopback. We poll the filesystem until its created.
-		// This of course add latency, maybe we should think of a way of mitigating it in the future.
-		// We do not care in the case of a symlink. A symlink pointing on nothing is still a valid symlink.
-		for ctx.Err() == nil {
-			var st syscall.Stat_t
-			err := syscall.Stat(localRepositoryPath, &st)
-			if err == nil {
-				// rootData := &fs.LoopbackRoot{
-				// 	Path: localRepositoryPath,
-				// 	Dev:  st.Dev,
-				// }
-				// rootNode := &fs.LoopbackNode{
-				// 	RootData: rootData,
-				// }
-				// rootData.RootNode = rootNode
-				// return rootNode, nil
-				return fs.NewLoopbackRoot(localRepositoryPath)
-			} else if errors.Is(err, os.ErrNotExist) {
-				// wait for the file to be created
-				// TODO: think of a more efficient way of archiving this
-				time.Sleep(100 * time.Millisecond)
-			} else {
-				// error, filesystem
-				return nil, fmt.Errorf("error while waiting for the local repository to be created: %w", err)
-			}
-		}
-		// error, context cancelled
-		return nil, fmt.Errorf("context cancelled while waiting for the local repository to be created: %w", ctx.Err())
+		// var st syscall.Stat_t
+		// err := syscall.Stat(localRepositoryPath, &st)
+		// rootData := &fs.LoopbackRoot{
+		// 	Path: localRepositoryPath,
+		// 	Dev:  st.Dev,
+		// }
+		// rootNode := &fs.LoopbackNode{
+		// 	RootData: rootData,
+		// }
+		// rootData.RootNode = rootNode
+		// return rootNode, nil
+		return fs.NewLoopbackRoot(localRepositoryPath)
 	}
 }
 
