@@ -32,7 +32,7 @@ func (u *User) GetLastModified() time.Time {
 }
 
 func (c *gitlabClient) fetchUser(ctx context.Context, uid int) (*User, error) {
-	gitlabUser, _, err := c.client.Users.GetUser(uid, gitlab.GetUsersOptions{})
+	gitlabUser, _, err := c.client.Users.GetUser(uid, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user with id %v: %v", uid, err)
 	}
@@ -57,7 +57,7 @@ func (c *gitlabClient) fetchUserContent(ctx context.Context, uid int) (types.Rep
 			PerPage: 100,
 		}}
 	for {
-		gitlabProjects, response, err := c.client.Projects.ListUserProjects(uid, listProjectOpt)
+		gitlabProjects, response, err := c.client.Projects.ListUserProjects(uid, listProjectOpt, gitlab.WithContext(ctx))
 		if err != nil {
 			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
 		}

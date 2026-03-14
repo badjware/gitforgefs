@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"code.gitea.io/sdk/gitea"
+	gitea "gitea.dev/sdk"
 	"github.com/badjware/gitforgefs/types"
 )
 
@@ -32,7 +32,7 @@ func (u *User) GetLastModified() time.Time {
 }
 
 func (c *giteaClient) fetchUser(ctx context.Context, userName string) (*User, error) {
-	giteaUser, _, err := c.client.GetUserInfo(userName)
+	giteaUser, _, err := c.client.Users.GetUserInfo(ctx, userName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user with name %v: %v", userName, err)
 	}
@@ -58,7 +58,7 @@ func (c *giteaClient) fetchUserContent(ctx context.Context, userName string) (ty
 		ListOptions: gitea.ListOptions{PageSize: 100},
 	}
 	for {
-		giteaRepositories, response, err := c.client.ListUserRepos(user.Name, listReposOptions)
+		giteaRepositories, response, err := c.client.Repositories.ListUserRepos(ctx, user.Name, listReposOptions)
 		if err != nil {
 			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch repository in gitea: %v", err)
 		}

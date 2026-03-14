@@ -4,7 +4,7 @@ import (
 	"path"
 	"time"
 
-	"code.gitea.io/sdk/gitea"
+	gitea "gitea.dev/sdk"
 	"github.com/badjware/gitforgefs/config"
 )
 

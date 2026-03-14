@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"code.gitea.io/sdk/gitea"
+	gitea "gitea.dev/sdk"
 	"github.com/badjware/gitforgefs/config"
 	"github.com/badjware/gitforgefs/types"
 )
@@ -36,7 +36,7 @@ func NewClient(logger *slog.Logger, config config.GiteaClientConfig) (*giteaClie
 	}
 
 	// Fetch current user and add it to the list
-	currentUser, _, err := client.GetMyUserInfo()
+	currentUser, _, err := client.Users.GetMyUserInfo(context.Background())
 	if err != nil {
 		logger.Warn("failed to fetch the current user:", "error", err.Error())
 	} else {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"code.gitea.io/sdk/gitea"
+	gitea "gitea.dev/sdk"
 	"github.com/badjware/gitforgefs/types"
 )
 
@@ -32,7 +32,7 @@ func (o *Organization) GetLastModified() time.Time {
 }
 
 func (c *giteaClient) fetchOrganization(ctx context.Context, orgName string) (*Organization, error) {
-	giteaOrg, _, err := c.client.GetOrg(orgName)
+	giteaOrg, _, err := c.client.Organizations.GetOrg(ctx, orgName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch organization with name %v: %v", orgName, err)
 	}
@@ -58,7 +58,7 @@ func (c *giteaClient) fetchOrganizationContent(ctx context.Context, orgName stri
 		ListOptions: gitea.ListOptions{PageSize: 100},
 	}
 	for {
-		giteaRepositories, response, err := c.client.ListOrgRepos(org.Name, gitea.ListOrgReposOptions(listReposOptions))
+		giteaRepositories, response, err := c.client.Repositories.ListOrgRepos(ctx, org.Name, gitea.ListOrgReposOptions(listReposOptions))
 		if err != nil {
 			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch repository in gitea: %v", err)
 		}

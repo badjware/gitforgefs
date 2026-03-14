@@ -46,7 +46,7 @@ func (c *gitlabClient) newGroupFromGitlabGroup(gitlabGroup *gitlab.Group) *Group
 }
 
 func (c *gitlabClient) fetchGroup(ctx context.Context, gid int) (*Group, error) {
-	gitlabGroup, _, err := c.client.Groups.GetGroup(gid, &gitlab.GetGroupOptions{})
+	gitlabGroup, _, err := c.client.Groups.GetGroup(gid, &gitlab.GetGroupOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch group with id %v: %v", gid, err)
 	}
@@ -67,7 +67,7 @@ func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid int) (types.Re
 		AllAvailable: gitlab.Ptr(true),
 	}
 	for {
-		gitlabGroups, response, err := c.client.Groups.ListSubGroups(gid, listGroupsOpt)
+		gitlabGroups, response, err := c.client.Groups.ListSubGroups(gid, listGroupsOpt, gitlab.WithContext(ctx))
 		if err != nil {
 			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch groups in gitlab: %v", err)
 		}
@@ -91,7 +91,7 @@ func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid int) (types.Re
 			PerPage: 100,
 		}}
 	for {
-		gitlabProjects, response, err := c.client.Groups.ListGroupProjects(gid, listProjectOpt)
+		gitlabProjects, response, err := c.client.Groups.ListGroupProjects(gid, listProjectOpt, gitlab.WithContext(ctx))
 		if err != nil {
 			return types.RepositoryGroupContent{}, fmt.Errorf("failed to fetch projects in gitlab: %v", err)
 		}

@@ -9,6 +9,9 @@ import (
 	"github.com/badjware/gitforgefs/types"
 )
 
+// fetchTimeout is the maximum duration to wait for a fetch operation to complete before timing out.
+const fetchTimeout = 30 * time.Second
+
 type Cache struct {
 	backend types.GitForge
 	logger  *slog.Logger
@@ -64,7 +67,10 @@ func (c *Cache) FetchGroupContent(ctx context.Context, source types.RepositoryGr
 	cachedContent := CachedContent{
 		GetContent: sync.OnceValues(func() (types.RepositoryGroupContent, error) {
 			logger.Info("Fetching content from backend")
-			return c.backend.FetchGroupContent(ctx, source)
+			// We use a separate context with a timeout for the fetch operation since we don't want to cancel the fetch if the original context is canceled.
+			fetchCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), fetchTimeout)
+			defer cancel()
+			return c.backend.FetchGroupContent(fetchCtx, source)
 		}),
 		creationTime: time.Now(),
 	}
@@ -79,7 +85,7 @@ func (c *Cache) FetchGroupContent(ctx context.Context, source types.RepositoryGr
 		content, err := cachedContent.GetContent()
 		if err != nil {
 			// If there was an error fetching the content, remove the cache entry to allow for retries
-			c.cachedRepositoryGroupSource.Delete(source.GetGroupPath())
+			c.cachedRepositoryGroupSource.CompareAndDelete(source.GetGroupPath(), &cachedContent)
 		}
 		return content, err
 	}
