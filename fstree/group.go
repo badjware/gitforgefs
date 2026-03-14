@@ -140,10 +140,6 @@ func (n *groupNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut)
 				out.Uid = st.Uid
 				out.Gid = st.Gid
 				out.Blksize = uint32(st.Blksize)
-
-				// Set gen as a workaround for ino collisions when using loopback nodes. See
-				// https://github.com/hanwen/go-fuse/issues/592#issuecomment-3650851207
-				// attrs.Gen = n.gen.Add(1)
 			}
 
 			repositoryNode, err := newRepositoryNodeFromSource(ctx, repository, n.param)

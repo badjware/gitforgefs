@@ -21,21 +21,11 @@ type repositorySymlinkNode struct {
 	source types.RepositorySource
 }
 
-// type repositoryLoopbackNode struct {
-// 	*fs.LoopbackNode
-// 	param *FSParam
-
-// 	source types.RepositorySource
-// }
-
 // Ensure we are implementing the NodeReadlinker interface
 var _ = (fs.NodeReadlinker)((*repositorySymlinkNode)(nil))
 
 // Ensure we are implementing the NodeGetattrer interface
 var _ = (fs.NodeGetattrer)((*repositorySymlinkNode)(nil))
-
-// Ensure we are implementing the NodeGetattrer interface
-// var _ = (fs.NodeWrapChilder)((*repositoryLoopbackNode)(nil))
 
 func newRepositoryNodeFromSource(ctx context.Context, source types.RepositorySource, param *FSParam) (fs.InodeEmbedder, error) {
 	if param.UseSymlinks {
@@ -48,17 +38,6 @@ func newRepositoryNodeFromSource(ctx context.Context, source types.RepositorySou
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch local repository path: %w", err)
 		}
-		// var st syscall.Stat_t
-		// err := syscall.Stat(localRepositoryPath, &st)
-		// rootData := &fs.LoopbackRoot{
-		// 	Path: localRepositoryPath,
-		// 	Dev:  st.Dev,
-		// }
-		// rootNode := &fs.LoopbackNode{
-		// 	RootData: rootData,
-		// }
-		// rootData.RootNode = rootNode
-		// return rootNode, nil
 		return fs.NewLoopbackRoot(localRepositoryPath)
 	}
 }
@@ -85,12 +64,3 @@ func (n *repositorySymlinkNode) Getattr(ctx context.Context, fh fs.FileHandle, o
 	out.Ctime = uint64(n.source.GetLastModified().Unix())
 	return 0
 }
-
-// func (n *repositoryLoopbackNode) WrapChild(ctx context.Context, ops fs.InodeEmbedder) fs.InodeEmbedder {
-// 	return &repositoryLoopbackNode{
-// 		LoopbackNode: ops.(*fs.LoopbackNode),
-
-// 		param:  n.param,
-// 		source: n.source,
-// 	}
-// }
