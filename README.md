@@ -113,3 +113,32 @@ fs:
   mountoptions: allow_other,nodev,nosuid
 ```
 5. Restart your mount.
+
+### fusermount3: mounting over filesystem ... is forbidden (WSL)
+
+If you see:
+
+```bash
+/usr/bin/fusermount3: mounting over filesystem type ... is forbidden
+mount failed: fusermount exited with code 256
+```
+
+This is a limitation of Windows Subsystem for Linux.
+
+Cause:
+* WSL restricts FUSE mounts on certain filesystem types
+* Most commonly happens when mounting into `/mnt/c`, `/mnt/d` (Windows drives)
+  
+Fix:
+Mount into a native Linux path instead:
+```bash
+mkdir -p ~/gitforgefs
+gitforgefs mount ~/gitforgefs
+```
+
+NOT:
+
+```bash
+# This will fail in WSL
+gitforgefs mount /mnt/c/somewhere
+```
