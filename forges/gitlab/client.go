@@ -16,8 +16,7 @@ type gitlabClient struct {
 
 	logger *slog.Logger
 
-	// use a map without values for efficient lookups
-	users map[string]int
+	users map[string]int64
 }
 
 func NewClient(logger *slog.Logger, config config.GitlabClientConfig) (*gitlabClient, error) {
@@ -35,7 +34,7 @@ func NewClient(logger *slog.Logger, config config.GitlabClientConfig) (*gitlabCl
 
 		logger: logger,
 
-		users: make(map[string]int),
+		users: make(map[string]int64),
 	}
 
 	// Fetch current user and add it to the list
@@ -83,8 +82,8 @@ func (c *gitlabClient) FetchRootGroupContent(ctx context.Context) (map[string]ty
 
 func (c *gitlabClient) FetchGroupContent(ctx context.Context, source types.RepositoryGroupSource) (types.RepositoryGroupContent, error) {
 	if _, found := c.users[source.GetGroupPath()]; found {
-		return c.fetchUserContent(ctx, int(source.GetGroupID()))
+		return c.fetchUserContent(ctx, int64(source.GetGroupID()))
 	} else {
-		return c.fetchGroupContent(ctx, int(source.GetGroupID()))
+		return c.fetchGroupContent(ctx, int64(source.GetGroupID()))
 	}
 }

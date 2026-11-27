@@ -27,7 +27,7 @@ DOCKERPUSH  := $(DOCKER) push
 DOCKER_TAGS := $(PROGRAM):$(VERSION)
 
 .PHONY: all
-all: build
+all: test build
 
 .PHONY: help
 help:
@@ -104,4 +104,3 @@ build: lint $(BIN)
 build-docker: $(BIN)
 	$(DOCKERBUILD) -t $(PROGRAM) .
 	$(foreach tag,$(DOCKER_TAGS),$(DOCKERTAG) $(PROGRAM) $(tag);)
-

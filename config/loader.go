@@ -5,7 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"gopkg.in/yaml.v2"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
 )
 
 const (
@@ -23,62 +25,62 @@ const (
 
 type (
 	Config struct {
-		FS     FSConfig           `yaml:"fs,omitempty"`
-		Gitlab GitlabClientConfig `yaml:"gitlab,omitempty"`
-		Github GithubClientConfig `yaml:"github,omitempty"`
-		Gitea  GiteaClientConfig  `yaml:"gitea,omitempty"`
-		Git    GitClientConfig    `yaml:"git,omitempty"`
+		FS     FSConfig           `koanf:"fs"`
+		Gitlab GitlabClientConfig `koanf:"gitlab"`
+		Github GithubClientConfig `koanf:"github"`
+		Gitea  GiteaClientConfig  `koanf:"gitea"`
+		Git    GitClientConfig    `koanf:"git"`
 	}
 	FSConfig struct {
-		Mountpoint   string `yaml:"mountpoint,omitempty"`
-		MountOptions string `yaml:"mountoptions,omitempty"`
-		UseSymlinks  bool   `yaml:"use_symlinks,omitempty"`
-		Forge        string `yaml:"forge,omitempty"`
+		Mountpoint   string `koanf:"mountpoint"`
+		MountOptions string `koanf:"mountoptions"`
+		UseSymlinks  bool   `koanf:"use_symlinks"`
+		Forge        string `koanf:"forge"`
 	}
 	GitlabClientConfig struct {
-		URL   string `yaml:"url,omitempty"`
-		Token string `yaml:"token,omitempty"`
+		URL   string `koanf:"url"`
+		Token string `koanf:"token"`
 
-		GroupIDs  []int    `yaml:"group_ids,omitempty"`
-		UserNames []string `yaml:"user_names,omitempty"`
+		GroupIDs  []int64  `koanf:"group_ids"`
+		UserNames []string `koanf:"user_names"`
 
-		ArchivedProjectHandling string `yaml:"archived_project_handling,omitempty"`
-		IncludeCurrentUser      bool   `yaml:"include_current_user,omitempty"`
-		PullMethod              string `yaml:"pull_method,omitempty"`
+		ArchivedProjectHandling string `koanf:"archived_project_handling"`
+		IncludeCurrentUser      bool   `koanf:"include_current_user"`
+		PullMethod              string `koanf:"pull_method"`
 	}
 	GithubClientConfig struct {
-		Token string `yaml:"token,omitempty"`
+		Token string `koanf:"token"`
 
-		OrgNames  []string `yaml:"org_names,omitempty"`
-		UserNames []string `yaml:"user_names,omitempty"`
+		OrgNames  []string `koanf:"org_names"`
+		UserNames []string `koanf:"user_names"`
 
-		ArchivedRepoHandling string `yaml:"archived_repo_handling,omitempty"`
-		IncludeCurrentUser   bool   `yaml:"include_current_user,omitempty"`
-		PullMethod           string `yaml:"pull_method,omitempty"`
+		ArchivedRepoHandling string `koanf:"archived_repo_handling"`
+		IncludeCurrentUser   bool   `koanf:"include_current_user"`
+		PullMethod           string `koanf:"pull_method"`
 	}
 	GiteaClientConfig struct {
-		URL   string `yaml:"url,omitempty"`
-		Token string `yaml:"token,omitempty"`
+		URL   string `koanf:"url"`
+		Token string `koanf:"token"`
 
-		OrgNames  []string `yaml:"org_names,omitempty"`
-		UserNames []string `yaml:"user_names,omitempty"`
+		OrgNames  []string `koanf:"org_names"`
+		UserNames []string `koanf:"user_names"`
 
-		ArchivedRepoHandling string `yaml:"archived_repo_handling,omitempty"`
-		IncludeCurrentUser   bool   `yaml:"include_current_user,omitempty"`
-		PullMethod           string `yaml:"pull_method,omitempty"`
+		ArchivedRepoHandling string `koanf:"archived_repo_handling"`
+		IncludeCurrentUser   bool   `koanf:"include_current_user"`
+		PullMethod           string `koanf:"pull_method"`
 	}
 	GitClientConfig struct {
-		CloneLocation    string `yaml:"clone_location,omitempty"`
-		Remote           string `yaml:"remote,omitempty"`
-		OnClone          string `yaml:"on_clone,omitempty"`
-		AutoPull         bool   `yaml:"auto_pull,omitempty"`
-		Depth            int    `yaml:"depth,omitempty"`
-		QueueSize        int    `yaml:"queue_size,omitempty"`
-		QueueWorkerCount int    `yaml:"worker_count,omitempty"`
+		CloneLocation    string `koanf:"clone_location"`
+		Remote           string `koanf:"remote"`
+		OnClone          string `koanf:"on_clone"`
+		AutoPull         bool   `koanf:"auto_pull"`
+		Depth            int    `koanf:"depth"`
+		QueueSize        int    `koanf:"queue_size"`
+		QueueWorkerCount int    `koanf:"worker_count"`
 	}
 )
 
-func LoadConfig(configPath string) (*Config, error) {
+func Default() Config {
 	// defaults
 	dataHome := os.Getenv("XDG_DATA_HOME")
 	if dataHome == "" {
@@ -86,18 +88,36 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 	defaultCloneLocation := filepath.Join(dataHome, "gitforgefs")
 
-	config := &Config{
+	return Config{
 		FS: FSConfig{
 			Mountpoint:   "",
 			MountOptions: "nodev,nosuid",
 			UseSymlinks:  true,
 			Forge:        "",
 		},
+		Git: GitClientConfig{
+			CloneLocation:    defaultCloneLocation,
+			Remote:           "origin",
+			OnClone:          "init",
+			AutoPull:         false,
+			Depth:            0,
+			QueueSize:        200,
+			QueueWorkerCount: 5,
+		},
+		Gitea: GiteaClientConfig{
+			URL:                  "https://codeberg.org",
+			Token:                "",
+			PullMethod:           "http",
+			OrgNames:             []string{},
+			UserNames:            []string{},
+			ArchivedRepoHandling: "hide",
+			IncludeCurrentUser:   true,
+		},
 		Gitlab: GitlabClientConfig{
 			URL:                     "https://gitlab.com",
 			Token:                   "",
 			PullMethod:              "http",
-			GroupIDs:                []int{9970},
+			GroupIDs:                []int64{9970},
 			UserNames:               []string{},
 			ArchivedProjectHandling: "hide",
 			IncludeCurrentUser:      true,
@@ -110,83 +130,80 @@ func LoadConfig(configPath string) (*Config, error) {
 			ArchivedRepoHandling: "hide",
 			IncludeCurrentUser:   true,
 		},
-		Git: GitClientConfig{
-			CloneLocation:    defaultCloneLocation,
-			Remote:           "origin",
-			OnClone:          "init",
-			AutoPull:         false,
-			Depth:            0,
-			QueueSize:        200,
-			QueueWorkerCount: 5,
-		},
+	}
+}
+
+func LoadConfig(configPath string) (Config, error) {
+	k := koanf.New(".")
+
+	// load file
+	if err := k.Load(file.Provider(configPath), yaml.Parser()); err != nil {
+		return Default(), fmt.Errorf("failed to load config file: %v", err)
 	}
 
-	f, err := os.Open(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open config file: %v", err)
-	}
-	defer f.Close()
-
-	d := yaml.NewDecoder(f)
-	if err := d.Decode(config); err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %v", err)
+	// unmarshal on top of defaults
+	config := Default()
+	if err := k.Unmarshal("", &config); err != nil {
+		return config, fmt.Errorf("failed to unmarshal config: %v", err)
 	}
 
-	// validate forge is set
-	if config.FS.Forge != ForgeGithub && config.FS.Forge != ForgeGitlab && config.FS.Forge != ForgeGitea {
-		return nil, fmt.Errorf("fs.forge must be either \"%v\", \"%v\", or \"%v\"", ForgeGitlab, ForgeGithub, ForgeGitea)
+	// validate
+	if err := Validate(config); err != nil {
+		return config, fmt.Errorf("failed to validate config: %v", err)
 	}
 
 	return config, nil
 }
 
-func MakeGitlabConfig(config *Config) (*GitlabClientConfig, error) {
-	// parse pull_method
+func Validate(config Config) error {
+	// fs
+
+	// validate forge is set
+	if config.FS.Forge != ForgeGithub && config.FS.Forge != ForgeGitlab && config.FS.Forge != ForgeGitea {
+		return fmt.Errorf("fs.forge must be either \"%v\", \"%v\", or \"%v\"", ForgeGitlab, ForgeGithub, ForgeGitea)
+	}
+
+	// git
+
+	// parse on_clone
+	if config.Git.OnClone != "init" && config.Git.OnClone != "clone" {
+		return fmt.Errorf("git.on_clone must be either \"init\" or \"clone\"")
+	}
+
+	// gitlab
+
 	if config.Gitlab.PullMethod != PullMethodHTTP && config.Gitlab.PullMethod != PullMethodSSH {
-		return nil, fmt.Errorf("gitlab.pull_method must be either \"%v\" or \"%v\"", PullMethodHTTP, PullMethodSSH)
+		return fmt.Errorf("gitlab.pull_method must be either \"%v\" or \"%v\"", PullMethodHTTP, PullMethodSSH)
 	}
 
 	// parse archive_handing
 	if config.Gitlab.ArchivedProjectHandling != ArchivedProjectShow && config.Gitlab.ArchivedProjectHandling != ArchivedProjectHide && config.Gitlab.ArchivedProjectHandling != ArchivedProjectIgnore {
-		return nil, fmt.Errorf("gitlab.archived_project_handling must be either \"%v\", \"%v\" or \"%v\"", ArchivedProjectShow, ArchivedProjectHide, ArchivedProjectIgnore)
+		return fmt.Errorf("gitlab.archived_project_handling must be either \"%v\", \"%v\" or \"%v\"", ArchivedProjectShow, ArchivedProjectHide, ArchivedProjectIgnore)
 	}
 
-	return &config.Gitlab, nil
-}
+	// github
 
-func MakeGithubConfig(config *Config) (*GithubClientConfig, error) {
 	// parse pull_method
 	if config.Github.PullMethod != PullMethodHTTP && config.Github.PullMethod != PullMethodSSH {
-		return nil, fmt.Errorf("github.pull_method must be either \"%v\" or \"%v\"", PullMethodHTTP, PullMethodSSH)
+		return fmt.Errorf("github.pull_method must be either \"%v\" or \"%v\"", PullMethodHTTP, PullMethodSSH)
 	}
 
 	// parse archive_handing
 	if config.Github.ArchivedRepoHandling != ArchivedProjectShow && config.Github.ArchivedRepoHandling != ArchivedProjectHide && config.Github.ArchivedRepoHandling != ArchivedProjectIgnore {
-		return nil, fmt.Errorf("github.archived_repo_handling must be either \"%v\", \"%v\" or \"%v\"", ArchivedProjectShow, ArchivedProjectHide, ArchivedProjectIgnore)
+		return fmt.Errorf("github.archived_repo_handling must be either \"%v\", \"%v\" or \"%v\"", ArchivedProjectShow, ArchivedProjectHide, ArchivedProjectIgnore)
 	}
 
-	return &config.Github, nil
-}
+	// gitea
 
-func MakeGiteaConfig(config *Config) (*GiteaClientConfig, error) {
 	// parse pull_method
 	if config.Gitea.PullMethod != PullMethodHTTP && config.Gitea.PullMethod != PullMethodSSH {
-		return nil, fmt.Errorf("gitea.pull_method must be either \"%v\" or \"%v\"", PullMethodHTTP, PullMethodSSH)
+		return fmt.Errorf("gitea.pull_method must be either \"%v\" or \"%v\"", PullMethodHTTP, PullMethodSSH)
 	}
 
 	// parse archive_handing
 	if config.Gitea.ArchivedRepoHandling != ArchivedProjectShow && config.Gitea.ArchivedRepoHandling != ArchivedProjectHide && config.Gitea.ArchivedRepoHandling != ArchivedProjectIgnore {
-		return nil, fmt.Errorf("gitea.archived_repo_handling must be either \"%v\", \"%v\" or \"%v\"", ArchivedProjectShow, ArchivedProjectHide, ArchivedProjectIgnore)
+		return fmt.Errorf("gitea.archived_repo_handling must be either \"%v\", \"%v\" or \"%v\"", ArchivedProjectShow, ArchivedProjectHide, ArchivedProjectIgnore)
 	}
 
-	return &config.Gitea, nil
-}
-
-func MakeGitConfig(config *Config) (*GitClientConfig, error) {
-	// parse on_clone
-	if config.Git.OnClone != "init" && config.Git.OnClone != "clone" {
-		return nil, fmt.Errorf("git.on_clone must be either \"init\" or \"clone\"")
-	}
-
-	return &config.Git, nil
+	return nil
 }

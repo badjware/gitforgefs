@@ -10,7 +10,7 @@ import (
 )
 
 type User struct {
-	ID           int
+	ID           int64
 	Name         string
 	LastModified time.Time
 }
@@ -31,7 +31,7 @@ func (u *User) GetLastModified() time.Time {
 	return u.LastModified
 }
 
-func (c *gitlabClient) fetchUser(ctx context.Context, uid int) (*User, error) {
+func (c *gitlabClient) fetchUser(ctx context.Context, uid int64) (*User, error) {
 	gitlabUser, _, err := c.client.Users.GetUser(uid, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user with id %v: %v", uid, err)
@@ -47,7 +47,7 @@ func (c *gitlabClient) fetchUser(ctx context.Context, uid int) (*User, error) {
 	}, nil
 }
 
-func (c *gitlabClient) fetchUserContent(ctx context.Context, uid int) (types.RepositoryGroupContent, error) {
+func (c *gitlabClient) fetchUserContent(ctx context.Context, uid int64) (types.RepositoryGroupContent, error) {
 	childProjects := make(map[string]types.RepositorySource)
 
 	// Fetch the user repositories

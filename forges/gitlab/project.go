@@ -9,7 +9,7 @@ import (
 )
 
 type Project struct {
-	ID            int
+	ID            int64
 	Name          string
 	Path          string
 	LastModified  time.Time

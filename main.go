@@ -94,39 +94,27 @@ func main() {
 	}
 
 	// Create the git client
-	gitClientParam, err := config.MakeGitConfig(loadedConfig)
+	gitClient, err := git.NewClient(logger, loadedConfig.Git)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	gitClient, _ := git.NewClient(logger, *gitClientParam)
 
 	// setup backend
 	var gitForgeClient types.GitForge
 	if loadedConfig.FS.Forge == config.ForgeGitlab {
 		// Create the gitlab client
-		gitlabClientConfig, err := config.MakeGitlabConfig(loadedConfig)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		gitForgeClient, _ = gitlab.NewClient(logger, *gitlabClientConfig)
+		gitForgeClient, err = gitlab.NewClient(logger, loadedConfig.Gitlab)
 	} else if loadedConfig.FS.Forge == config.ForgeGithub {
 		// Create the github client
-		githubClientConfig, err := config.MakeGithubConfig(loadedConfig)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		gitForgeClient, _ = github.NewClient(logger, *githubClientConfig)
+		gitForgeClient, err = github.NewClient(logger, loadedConfig.Github)
 	} else if loadedConfig.FS.Forge == config.ForgeGitea {
 		// Create the gitea client
-		giteaClientConfig, err := config.MakeGiteaConfig(loadedConfig)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		gitForgeClient, _ = gitea.NewClient(logger, *giteaClientConfig)
+		gitForgeClient, err = gitea.NewClient(logger, loadedConfig.Gitea)
+	}
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	// setup cache

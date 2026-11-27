@@ -10,7 +10,7 @@ import (
 )
 
 type Group struct {
-	ID           int
+	ID           int64
 	Name         string
 	Path         string
 	LastModified time.Time
@@ -45,7 +45,7 @@ func (c *gitlabClient) newGroupFromGitlabGroup(gitlabGroup *gitlab.Group) *Group
 	}
 }
 
-func (c *gitlabClient) fetchGroup(ctx context.Context, gid int) (*Group, error) {
+func (c *gitlabClient) fetchGroup(ctx context.Context, gid int64) (*Group, error) {
 	gitlabGroup, _, err := c.client.Groups.GetGroup(gid, &gitlab.GetGroupOptions{}, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch group with id %v: %v", gid, err)
@@ -54,7 +54,7 @@ func (c *gitlabClient) fetchGroup(ctx context.Context, gid int) (*Group, error) 
 	return c.newGroupFromGitlabGroup(gitlabGroup), nil
 }
 
-func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid int) (types.RepositoryGroupContent, error) {
+func (c *gitlabClient) fetchGroupContent(ctx context.Context, gid int64) (types.RepositoryGroupContent, error) {
 	childGroups := make(map[string]types.RepositoryGroupSource)
 	childProjects := make(map[string]types.RepositorySource)
 

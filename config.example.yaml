@@ -17,6 +17,65 @@ fs:
   # Must be one of "gitlab", "github", or "gitea"
   forge: gitlab
 
+git:
+  # Path to the local repository cache. Repositories in the filesystem will symlink to a folder in this path.
+  # Default to $XDG_DATA_HOME/gitforgefs, or $HOME/.local/share/gitforgefs if the environment variable $XDG_DATA_HOME is unset.
+  #clone_location:
+
+  # The name of the remote in the local clone.
+  remote: origin
+
+  # Must be set to either "init", or "clone".
+  # If set to "init", the local copy will be initialized with `git init` and the remote is configured manually. The git server is nerver queried. (fast)
+  # If set to "clone", the local copy will be initialized with `git clone`. (slow)
+  # NOTE: If set to "init", the local clone will appear empty. Running `git pull master` will download the files from the git server.
+  on_clone: init
+
+  # If set to true, the local clone will automatically run `git pull` in the local clone if it's on the default branch and the worktree is clean.
+  # Pulls are asynchronous so it can take a few minutes for all repositories to sync up.
+  # It's highly recommended to leave this setting turned off.
+  auto_pull: false
+
+  # The depth of the git history to pull. Set to 0 to pull the full history.
+  depth: 0
+
+  # The number of git operations that can be queued up
+  queue_size: 200
+
+  # The number of parallel git operations that is allowed to run at once
+  worker_count: 5
+
+gitea:
+  # The gitea url.
+  url: https://codeberg.org
+
+  # The gitlab api token
+  # Default to anonymous (only public repositories will be visible)
+  #token:
+
+  # Must be set to either "http" or "ssh".
+  # The protocol to configure the git remote on.
+  # "http" may not work on private repositories unless a credential manager is configured
+  # If possible, prefer "ssh" over "http"
+  pull_method: http
+
+  # A list of the name of the organizations to expose in the filesystem
+  org_names: []
+
+  # A list of the name of the user to expose their repositories un the filesystem
+  user_names: []
+
+  # Set how archived repositories are handled.
+  # If set to "show", it will add them to the filesystem and treat them like any other repository
+  # If set to "hide", it will add them to the filesystem, but prefix the symlink with a "."
+  # If set to "ignore", it will make them absent from the filesystem
+  # Default to "hide"
+  archived_repo_handling: hide
+
+  # If set to true, the personal repositories and the repositories of the organizations the user the api token belongs to
+  # will be automatically be added to the list of users exposed by the filesystem.
+  include_current_user: true
+
 gitlab:
   # The gitlab url.
   url: https://gitlab.com
@@ -75,62 +134,3 @@ github:
   # If set to true, the personal repositories and the repositories of the organizations the user the api token belongs to
   # will be automatically be added to the list of users exposed by the filesystem.
   include_current_user: true
-
-gitea:
-  # The gitea url.
-  url: https://gitea.com
-
-  # The gitlab api token
-  # Default to anonymous (only public repositories will be visible)
-  #token:
-
-  # Must be set to either "http" or "ssh".
-  # The protocol to configure the git remote on.
-  # "http" may not work on private repositories unless a credential manager is configured
-  # If possible, prefer "ssh" over "http"
-  pull_method: http
-
-  # A list of the name of the organizations to expose in the filesystem
-  org_names: []
-
-  # A list of the name of the user to expose their repositories un the filesystem
-  user_names: []
-
-  # Set how archived repositories are handled.
-  # If set to "show", it will add them to the filesystem and treat them like any other repository
-  # If set to "hide", it will add them to the filesystem, but prefix the symlink with a "."
-  # If set to "ignore", it will make them absent from the filesystem
-  # Default to "hide"
-  archived_repo_handling: hide
-
-  # If set to true, the personal repositories and the repositories of the organizations the user the api token belongs to
-  # will be automatically be added to the list of users exposed by the filesystem.
-  include_current_user: true
-
-git:
-  # Path to the local repository cache. Repositories in the filesystem will symlink to a folder in this path.
-  # Default to $XDG_DATA_HOME/gitforgefs, or $HOME/.local/share/gitforgefs if the environment variable $XDG_DATA_HOME is unset.
-  #clone_location:
-
-  # The name of the remote in the local clone.
-  remote: origin
-
-  # Must be set to either "init", or "clone".
-  # If set to "init", the local copy will be initialized with `git init` and the remote is configured manually. The git server is nerver queried. (fast)
-  # If set to "clone", the local copy will be initialized with `git clone`. (slow)
-  # NOTE: If set to "init", the local clone will appear empty. Running `git pull master` will download the files from the git server.
-  on_clone: init
-
-  # If set to true, the local clone will automatically run `git pull` in the local clone if it's on the default branch and the worktree is clean.
-  # Pulls are asynchronous so it can take a few minutes for all repositories to sync up.
-  # It's highly recommended to leave this setting turned off.
-  auto_pull: false
-
-  # The depth of the git history to pull. Set to 0 to pull the full history.
-  depth: 1
-
-  # The number of git operations that can be queued up
-  queue_size: 200
-
-  # The number of parallel git operations that is allowed to run at once
-  worker_count: 5

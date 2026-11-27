@@ -1,3 +1,9 @@
+# next
+* rewrote the config loader to use koanf instead of yaml.v2
+  * config must now be YAML 1.2 compliant
+* Fix gitea not having its default set properly
+* Updated deps
+
 # v1.2.0
 * Fix a crash when `archived_project_handling` is set to "hidden" in gitlab
 * Refactored caching, laying the groundwork for automatic cache invalidation.
